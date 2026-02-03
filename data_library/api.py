@@ -21,13 +21,12 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Challenge Statement Generator API")
 
-# Configure CORS for Next.js
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js dev server
+    allow_origins=["*"],  # Allow all for debugging
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ============================================================================
@@ -105,15 +104,8 @@ async def generate_challenge_statements(
 ):
     """
     Generate challenge statements from marketing brief.
-    
-    Steps:
-    1. Create session in DB (status: generating)
-    2. Run diagnostic decision tree
-    3. Generate 5 challenge statements with Gemini
-    4. Evaluate each statement
-    5. Save to DB (status: completed)
-    6. Return structured response
     """
+    print(f"🔥 RECEIVED REQUEST: brief length={len(request.brief_text)}")
     try:
         # 1. Create session
         session = ChallengeSession(

@@ -304,7 +304,11 @@ export default function BrainstormAgent() {
     setError(null)
 
     try {
-      // Call real backend API
+      console.log("🚀 Starting generation request...")
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+      console.log("📡 Sending POST to /api/generate-challenge-statements")
       const response = await fetch('http://localhost:8000/api/generate-challenge-statements', {
         method: 'POST',
         headers: {
@@ -314,8 +318,12 @@ export default function BrainstormAgent() {
           brief_text: briefText,
           include_research: includeResearch,
           selected_research_ids: includeResearch ? selectedResearch : null
-        })
+        }),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
+      console.log(`📥 Response status: ${response.status}`)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -336,9 +344,18 @@ export default function BrainstormAgent() {
       setResult(result)
       setAppState("success")
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred"
-      )
+      console.error("🚨 Generation failed:", err)
+
+      let errorMessage = "An unexpected error occurred"
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          errorMessage = "Request timed out after 60 seconds. The model might be busy."
+        } else {
+          errorMessage = err.message
+        }
+      }
+
+      setError(errorMessage)
       setAppState("error")
     }
   }

@@ -67,7 +67,7 @@ export function BriefInput({
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    
+
     const file = e.dataTransfer.files[0]
     if (file) {
       await handleFile(file)
@@ -144,7 +144,7 @@ export function BriefInput({
             </button>
           </div>
         )}
-        
+
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -185,91 +185,97 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
         </div>
       </div>
 
-{/* Research Library Section */}
-  <div className="rounded-lg border border-border bg-card">
-    <button
-      type="button"
-      onClick={() => setShowResearch(!showResearch)}
-      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted/50"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <BookOpen className="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <p className="font-medium text-foreground">Research Library</p>
-          <p className="text-sm text-muted-foreground">
-            {researchDocuments.length} documents available
-            {selectedResearch.length > 0 && ` • ${selectedResearch.length} selected`}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {researchDocuments.length > 0 && (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <Switch
-              id="include-research"
-              checked={includeResearch}
-              onCheckedChange={setIncludeResearch}
-            />
-            <Label htmlFor="include-research" className="text-sm cursor-pointer">
-              Include in analysis
-            </Label>
+      {/* Research Library Section */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="flex w-full items-center justify-between p-4">
+          <div
+            className="flex flex-1 items-center gap-3 cursor-pointer transition-colors hover:opacity-80"
+            onClick={() => setShowResearch(!showResearch)}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <BookOpen className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Research Library</p>
+              <p className="text-sm text-muted-foreground">
+                {researchDocuments.length} documents available
+                {selectedResearch.length > 0 && ` • ${selectedResearch.length} selected`}
+              </p>
+            </div>
           </div>
-        )}
-        {showResearch ? (
-          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-        )}
-      </div>
-    </button>
+          <div className="flex items-center gap-3">
+            {researchDocuments.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="include-research"
+                  checked={includeResearch}
+                  onCheckedChange={setIncludeResearch}
+                />
+                <Label htmlFor="include-research" className="text-sm cursor-pointer">
+                  Include in analysis
+                </Label>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowResearch(!showResearch)}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              aria-label={showResearch ? "Collapse research library" : "Expand research library"}
+            >
+              {showResearch ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </button>
+          </div>
+        </div>
 
-    <div
-      className={cn(
-        "overflow-hidden transition-all duration-300",
-        showResearch ? "max-h-[600px]" : "max-h-0"
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            showResearch ? "max-h-[600px]" : "max-h-0"
+          )}
+        >
+          <div className="border-t border-border p-4">
+            <ResearchLibrary
+              documents={researchDocuments}
+              selectedDocuments={selectedResearch}
+              onToggleDocument={onToggleResearch}
+              onSelectAll={onSelectAllResearch}
+              onClearAll={onClearAllResearch}
+              onAddDocument={onAddResearchDocument}
+              onRemoveDocument={onRemoveResearchDocument}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Include research indicator */}
+      {includeResearch && selectedResearch.length > 0 && (
+        <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
+          <FolderOpen className="h-4 w-4 text-primary" />
+          <span className="text-sm text-foreground">
+            {selectedResearch.length} research document{selectedResearch.length !== 1 ? "s" : ""} will be used to inform challenge statement generation and evaluation
+          </span>
+        </div>
       )}
-    >
-      <div className="border-t border-border p-4">
-        <ResearchLibrary
-          documents={researchDocuments}
-          selectedDocuments={selectedResearch}
-          onToggleDocument={onToggleResearch}
-          onSelectAll={onSelectAllResearch}
-          onClearAll={onClearAllResearch}
-          onAddDocument={onAddResearchDocument}
-          onRemoveDocument={onRemoveResearchDocument}
-        />
-      </div>
-    </div>
-  </div>
 
-  {/* Include research indicator */}
-  {includeResearch && selectedResearch.length > 0 && (
-    <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
-      <FolderOpen className="h-4 w-4 text-primary" />
-      <span className="text-sm text-foreground">
-        {selectedResearch.length} research document{selectedResearch.length !== 1 ? "s" : ""} will be used to inform challenge statement generation and evaluation
-      </span>
-    </div>
-  )}
+      <Button
+        onClick={() => onGenerate(includeResearch && selectedResearch.length > 0)}
+        disabled={!canGenerate || isLoading}
+        size="lg"
+        className="w-full gap-2 text-base"
+      >
+        <Sparkles className="h-5 w-5" />
+        {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
+      </Button>
 
-  <Button
-    onClick={() => onGenerate(includeResearch && selectedResearch.length > 0)}
-    disabled={!canGenerate || isLoading}
-    size="lg"
-    className="w-full gap-2 text-base"
-  >
-    <Sparkles className="h-5 w-5" />
-    {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
-  </Button>
-  
-  {!canGenerate && value.length > 0 && (
-    <p className="text-center text-sm text-muted-foreground">
-      Please provide at least 50 characters for meaningful analysis
-    </p>
-  )}
-  </div>
+      {!canGenerate && value.length > 0 && (
+        <p className="text-center text-sm text-muted-foreground">
+          Please provide at least 50 characters for meaningful analysis
+        </p>
+      )}
+    </div>
   )
 }
