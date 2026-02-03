@@ -10,10 +10,10 @@ if ($backendPort) {
     }
 }
 
-# 2. Clear Port 5173 (Frontend)
-$frontendPort = Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue
+# 2. Clear Port 3000 (Next.js Frontend)
+$frontendPort = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
 if ($frontendPort) {
-    Write-Host "Cleaning up existing Frontend process (Port 5173)..." -ForegroundColor Yellow
+    Write-Host "Cleaning up existing Frontend process (Port 3000)..." -ForegroundColor Yellow
     foreach ($conn in $frontendPort) {
         try { Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue } catch {}
     }
@@ -21,12 +21,12 @@ if ($frontendPort) {
 
 # 3. Start Backend in a new window
 Write-Host "🚀 Launching Backend API..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Agentic Data Library Backend ---' -ForegroundColor Cyan; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000 --reload"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Backend ---' -ForegroundColor Cyan; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000 --reload"
 
 # 4. Start Frontend in a new window
-Write-Host "🎨 Launching Frontend (Agent Studio)..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Agentic Data Library Frontend ---' -ForegroundColor Green; cd frontend; npm run dev"
+Write-Host "🎨 Launching Frontend (Next.js)..." -ForegroundColor Green
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Frontend ---' -ForegroundColor Green; cd my-app; npm run dev"
 
 Write-Host "`nAll systems launching. check the new windows for logs." -ForegroundColor White
 Write-Host "Backend: http://localhost:8000"
-Write-Host "Frontend: http://localhost:5173"
+Write-Host "Frontend: http://localhost:3000"
