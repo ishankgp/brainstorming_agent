@@ -79,3 +79,109 @@ class LibraryStatement(Base):
     created_by = Column(String, nullable=True)
 
     session = relationship("BrainstormSession", back_populates="library_statements")
+
+# ============================================================================
+# NEW CHALLENGE GENERATION MODELS (for my-app frontend)
+# ============================================================================
+
+class ChallengeSession(Base):
+    """Store challenge generation sessions with full history."""
+    __tablename__ = "challenge_sessions"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    brief_text = Column(Text, nullable=False)
+    include_research = Column(Boolean, default=False)
+    selected_research_ids = Column(JSON, nullable=True)  # ["RD001", "RD002"]
+    
+    # Results
+    diagnostic_summary = Column(Text, nullable=True)
+    diagnostic_path = Column(JSON, nullable=True)  # DiagnosticPathStep[]
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String, default="draft")  # draft, generating, completed, error
+    error_message = Column(Text, nullable=True)
+    
+    # Relationships
+    challenge_statements = relationship("ChallengeStatement", back_populates="session", cascade="all, delete-orphan")
+
+class ChallengeStatement(Base):
+    """Individual generated challenge statements."""
+    __tablename__ = "challenge_statements"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String, ForeignKey("challenge_sessions.id"))
+    
+    # Core fields
+    text = Column(Text, nullable=False)
+    selected_format = Column(String, nullable=False)  # "F01", "F02", etc.
+    reasoning = Column(Text, nullable=False)
+    
+    # Display order
+    position = Column(Integer, nullable=False)  # 1-5
+    
+    # Relationships
+    session = relationship("ChallengeSession", back_populates="challenge_statements")
+    evaluation = relationship("ChallengeEvaluation", uselist=False, back_populates="statement", cascade="all, delete-orphan")
+
+class ChallengeEvaluation(Base):
+    """Evaluation scores for each challenge statement."""
+    __tablename__ = "challenge_evaluations"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    statement_id = Column(Integer, ForeignKey("challenge_statements.id"))
+    
+    # Summary scores
+    total_score = Column(Integer, nullable=False)  # Sum of dimension scores
+    weighted_score = Column(Integer, nullable=False)  # 0-100
+    passes_non_negotiables = Column(Boolean, nullable=False)
+    failed_non_negotiables = Column(JSON, nullable=True)  # ["Audience Truth", ...]
+    recommendation = Column(String, nullable=False)  # "proceed", "revise", "reject"
+    
+    # Relationships
+    statement = relationship("ChallengeStatement", back_populates="evaluation")
+    dimension_scores = relationship("DimensionScore", back_populates="evaluation", cascade="all, delete-orphan")
+    research_references = relationship("ResearchReference", back_populates="evaluation", cascade="all, delete-orphan")
+
+class DimensionScore(Base):
+    """Score for each of 8 evaluation dimensions."""
+    __tablename__ = "dimension_scores"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    evaluation_id = Column(Integer, ForeignKey("challenge_evaluations.id"))
+    
+    dimension_id = Column(String, nullable=False)  # "E01", "E02", etc.
+    score = Column(Integer, nullable=False)  # 1-5
+    notes = Column(Text, nullable=False)
+    has_red_flags = Column(Boolean, default=False)
+    
+    evaluation = relationship("ChallengeEvaluation", back_populates="dimension_scores")
+
+class ResearchReference(Base):
+    """Link to research documents used in evaluation."""
+    __tablename__ = "research_references"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    evaluation_id = Column(Integer, ForeignKey("challenge_evaluations.id"))
+    
+    document_id = Column(String, nullable=False)  # "RD001"
+    document_name = Column(String, nullable=False)
+    relevant_insight = Column(Text, nullable=False)
+    relevance_score = Column(Integer, nullable=False)  # 1-5
+    
+    evaluation = relationship("ChallengeEvaluation", back_populates="research_references")
+
+class ResearchDocument(Base):
+    """Uploaded research documents (no key insights extraction)."""
+    __tablename__ = "research_documents"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # "clinical-trial", "market-research", etc.
+    file_type = Column(String, nullable=False)  # "pdf", "ppt", "docx"
+    file_path = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Metadata
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    size_kb = Column(Integer, nullable=False)
