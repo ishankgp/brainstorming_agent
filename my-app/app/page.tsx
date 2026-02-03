@@ -14,7 +14,6 @@ import {
   DEFAULT_FORMATS,
   DEFAULT_DIAGNOSTIC_RULES,
   SAMPLE_RESEARCH_DOCUMENTS,
-  generateMockResult,
 } from "@/lib/mock-data"
 import type {
   GenerationResult,
@@ -230,7 +229,7 @@ export default function BrainstormAgent() {
   const [appState, setAppState] = useState<AppState>("idle")
   const [result, setResult] = useState<GenerationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-const [isLibraryOpen, setIsLibraryOpen] = useState(false)
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false)
   const [formats, setFormats] = useState<ChallengeFormat[]>(DEFAULT_FORMATS)
   const [diagnosticRules, setDiagnosticRules] =
     useState<DiagnosticRule[]>(DEFAULT_DIAGNOSTIC_RULES)
@@ -245,7 +244,7 @@ const [isLibraryOpen, setIsLibraryOpen] = useState(false)
   useEffect(() => {
     const savedFormats = localStorage.getItem("brainstorm-formats")
     const savedRules = localStorage.getItem("brainstorm-rules")
-    
+
     if (savedFormats) {
       try {
         setFormats(JSON.parse(savedFormats))
@@ -253,7 +252,7 @@ const [isLibraryOpen, setIsLibraryOpen] = useState(false)
         // Use defaults if parse fails
       }
     }
-    
+
     if (savedRules) {
       try {
         setDiagnosticRules(JSON.parse(savedRules))
@@ -274,7 +273,7 @@ const [isLibraryOpen, setIsLibraryOpen] = useState(false)
     localStorage.setItem("brainstorm-rules", JSON.stringify(newRules))
   }
 
-// Research library handlers
+  // Research library handlers
   const handleToggleResearch = (docId: string) => {
     setSelectedResearch((prev) =>
       prev.includes(docId)
@@ -305,18 +304,36 @@ const [isLibraryOpen, setIsLibraryOpen] = useState(false)
     setError(null)
 
     try {
-      // Simulate API call with 2-3 second delay
-      await new Promise((resolve) => setTimeout(resolve, 2500))
+      // Call real backend API
+      const response = await fetch('http://localhost:8000/api/generate-challenge-statements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brief_text: briefText,
+          include_research: includeResearch,
+          selected_research_ids: includeResearch ? selectedResearch : null
+        })
+      })
 
-      // Simulate occasional errors (10% chance)
-      if (Math.random() < 0.1) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
         throw new Error(
-          "Failed to connect to the brainstorming agent. Please try again."
+          errorData.detail || `API request failed with status ${response.status}`
         )
       }
 
-      const mockResult = generateMockResult(briefText, includeResearch)
-      setResult(mockResult)
+      const data = await response.json()
+
+      // Transform API response to match frontend format
+      const result = {
+        challenge_statements: data.challenge_statements,
+        diagnostic_summary: data.diagnostic_summary,
+        diagnostic_path: data.diagnostic_path
+      }
+
+      setResult(result)
       setAppState("success")
     } catch (err) {
       setError(
@@ -345,7 +362,7 @@ const [isLibraryOpen, setIsLibraryOpen] = useState(false)
       <main className="mx-auto max-w-3xl px-6 py-8 md:py-12">
         {/* Input Section - Always visible when not in success state */}
         {appState !== "success" && (
-<BriefInput
+          <BriefInput
             value={briefText}
             onChange={setBriefText}
             onGenerate={handleGenerate}
