@@ -11,10 +11,10 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Model Configuration
-# We use standard Flash with prompt engineering for thought traces
-GEMINI_THINKING_MODEL = "gemini-3-flash-preview"
+# We use standard Flash for prompt engineering for thought traces
+GEMINI_THINKING_MODEL = "gemini-1.5-flash"
 # We use standard Flash for fast File Search retrieval
-GEMINI_RAG_MODEL = "gemini-3-flash-preview"
+GEMINI_RAG_MODEL = "gemini-1.5-flash"
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in .env file")

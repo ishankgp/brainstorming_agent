@@ -35,9 +35,33 @@ export function ResultsSection({
   const [showDiagnostic, setShowDiagnostic] = useState(false)
   const [localResult, setLocalResult] = useState<GenerationResult>(result)
 
-  // Sync with streaming updates from parent
+  // Sync with streaming updates from parent, but preserve local edits
   useEffect(() => {
-    setLocalResult(result)
+    setLocalResult((prev) => {
+      // Create a map of existing statements for stable access
+      const existingMap = new Map(prev.challenge_statements.map((s) => [s.id, s]))
+
+      // Merge: For each statement in the new result...
+      const mergedStatements = result.challenge_statements.map((newStmt) => {
+        const existing = existingMap.get(newStmt.id)
+
+        // If we already have this statement locally, keep OUR version 
+        // to preserve any edits or "Accepted" states the user made.
+        // This assumes the stream only appends new statements and doesn't 
+        // need to force-overwrite existing ones.
+        if (existing) {
+          return existing
+        }
+
+        // If it's new, add it
+        return newStmt
+      })
+
+      return {
+        ...result, // Update top-level metadata (diagnostic etc)
+        challenge_statements: mergedStatements,
+      }
+    })
   }, [result])
 
   const handleUpdateStatement = (statementId: number, newText: string, newEvaluation: any) => {

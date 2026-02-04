@@ -137,6 +137,7 @@ class ChallengeEvaluation(Base):
     passes_non_negotiables = Column(Boolean, nullable=False)
     failed_non_negotiables = Column(JSON, nullable=True)  # ["Audience Truth", ...]
     recommendation = Column(String, nullable=False)  # "proceed", "revise", "reject"
+    detected_format_id = Column(String, nullable=True)  # "F01", "F02" etc.
     
     # Relationships
     statement = relationship("ChallengeStatement", back_populates="evaluation")

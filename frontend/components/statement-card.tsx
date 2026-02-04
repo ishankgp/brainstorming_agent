@@ -83,6 +83,9 @@ export function StatementCard({
       }
     } catch (err) {
       console.error("Rewrite failed:", err)
+      const errorDiv = document.createElement("div")
+      // Simple fallback for now
+      alert("Failed to rewrite statement. Please try again.")
     } finally {
       setIsRewriting(false)
     }
@@ -104,6 +107,7 @@ export function StatementCard({
       setComparisonResult(result)
     } catch (err) {
       console.error("Evaluation failed:", err)
+      alert("Failed to evaluate statement. Please check your connection.")
     } finally {
       setIsEvaluating(false)
     }

@@ -30,9 +30,9 @@ def get_client():
     return _client
 
 # Model configuration
-# As requested, using gemini-3-pro-preview for everything
-GEMINI_PRO_MODEL = "gemini-3-pro-preview" 
-GEMINI_3_PRO_MODEL = "gemini-3-pro-preview"
+# Model configuration
+# Using stable gemini-1.5-pro for reasoning tasks
+GEMINI_PRO_MODEL = "gemini-1.5-pro" 
 
 # ============================================================================
 # STRUCTURED OUTPUT SCHEMA FOR DIAGNOSTIC ANALYSIS

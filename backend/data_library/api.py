@@ -192,7 +192,8 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
                         weighted_score=eval_data["weighted_score"],
                         passes_non_negotiables=eval_data["passes_non_negotiables"],
                         failed_non_negotiables=eval_data["failed_non_negotiables"],
-                        recommendation=eval_data["recommendation"]
+                        recommendation=eval_data["recommendation"],
+                        detected_format_id=eval_data.get("detected_format_id")
                     )
                     db.add(evaluation)
                     db.flush()
@@ -316,7 +317,7 @@ def get_session(session_id: str, db: Session = Depends(get_db_session)):
                     )
                     for ref in eval_obj.research_references
                 ] if eval_obj.research_references else None,
-                detected_format_id="F01" # Default if not present in DB
+                detected_format_id=eval_obj.detected_format_id or stmt.selected_format or "F01"
             )
         
         statements_response.append(
