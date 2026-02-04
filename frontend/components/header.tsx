@@ -17,7 +17,7 @@ interface HeaderProps {
 
 export function Header({ onOpenLibrary }: HeaderProps) {
   return (
-    <header className="border-b border-border bg-card">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
