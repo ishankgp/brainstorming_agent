@@ -425,12 +425,20 @@ async def upload_research_document(
     return {"id": doc.id, "status": "uploaded", "gemini_status": "synced" if doc.gemini_file_id else "local_only"}
 
 @app.delete("/api/research-documents/{doc_id}")
-def delete_research_document(doc_id: str, db: Session = Depends(get_db_session)):
+async def delete_research_document(doc_id: str, db: Session = Depends(get_db_session)):
     """Delete research document."""
     doc = db.query(ResearchDocument).filter(ResearchDocument.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     
+    # Delete from Gemini (Sync)
+    if doc.gemini_file_id:
+        try:
+            from data_library.challenge_generator import delete_file_from_gemini
+            await delete_file_from_gemini(doc.gemini_file_id)
+        except Exception as e:
+            print(f"Failed to sync delete to Gemini: {e}")
+
     # Delete file
     try:
         Path(doc.file_path).unlink(missing_ok=True)

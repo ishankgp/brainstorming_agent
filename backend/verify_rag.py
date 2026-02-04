@@ -55,7 +55,7 @@ def test_rag_flow():
             "selected_research_ids": [doc_id]
         }
         
-        with requests.post(f"{BASE_URL}/api/challenge-stream", json=payload, stream=True) as s:
+        with requests.post(f"{BASE_URL}/api/generate-challenge-statements", json=payload, stream=True) as s:
             print(f"Generation Status: {s.status_code}")
             start = time.time()
             for line in s.iter_lines():

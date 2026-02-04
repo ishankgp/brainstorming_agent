@@ -731,3 +731,15 @@ async def upload_file_to_gemini_corpus(file_path: str, display_name: str):
     except Exception as e:
         logger.error(f"Gemini Upload Error: {e}")
         return None
+
+async def delete_file_from_gemini(file_name: str):
+    """Delete a file from Gemini Files API."""
+    client = get_client()
+    try:
+        logger.info(f"Deleting file {file_name} from Gemini...")
+        client.files.delete(name=file_name)
+        logger.info(f"Successfully deleted {file_name}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to delete file {file_name}: {e}")
+        return False
