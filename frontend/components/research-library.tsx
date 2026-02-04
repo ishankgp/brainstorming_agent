@@ -118,10 +118,12 @@ export function ResearchLibrary({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Input
+            id="research-search"
             placeholder="Search documents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full sm:w-64"
+            suppressHydrationWarning
           />
         </div>
         <div className="flex items-center gap-2">
@@ -130,6 +132,7 @@ export function ResearchLibrary({
             size="sm"
             onClick={allSelected ? onClearAll : onSelectAll}
             className="bg-transparent text-xs"
+            suppressHydrationWarning
           >
             {allSelected ? "Clear All" : "Select All"}
           </Button>
@@ -138,6 +141,7 @@ export function ResearchLibrary({
             size="sm"
             onClick={handleSimulatedUpload}
             className="gap-1.5 bg-transparent"
+            suppressHydrationWarning
           >
             <Upload className="h-3.5 w-3.5" />
             Upload
