@@ -109,36 +109,38 @@ export function BriefInput({
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-foreground tracking-tight">
-          Generate Challenge Statements
+    <div className="w-full space-y-14">
+      <div className="text-center space-y-5">
+        <h2 className="text-5xl md:text-6xl font-light text-foreground tracking-tight leading-tight">
+          Generate Challenge<br />Statements
         </h2>
-        <p className="mt-3 text-base text-muted-foreground font-medium">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground font-light leading-relaxed">
           Select a brand and brief format, or paste your own marketing brief
         </p>
       </div>
 
       {/* Brand & Brief Format Selector */}
-      <BrandSelector onBriefSelected={handleBriefSelected} />
+      <div className="mt-8">
+        <BrandSelector onBriefSelected={handleBriefSelected} />
+      </div>
 
       <div
         className={cn(
-          "relative rounded-xl border-2 border-dashed transition-all duration-300",
-          isDragging ? "border-primary bg-primary/8 shadow-md" : "border-border/60 bg-card/50",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 hover:border-border/80"
+          "relative rounded-xl border transition-all duration-300",
+          isDragging ? "border-primary/60 bg-primary/5" : "border-border/40 bg-card/30",
+          "focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         {fileName && (
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-sm">
-            <FileText className="h-4 w-4 text-primary" />
-            <span className="text-foreground">{fileName}</span>
+          <div className="flex items-center gap-3 border-b border-border/40 px-6 py-3 text-sm">
+            <FileText className="h-4 w-4 text-primary/70" />
+            <span className="text-foreground/80">{fileName}</span>
             <button
               onClick={clearFile}
-              className="ml-auto rounded p-1 hover:bg-muted"
+              className="ml-auto rounded p-1 hover:bg-muted/50 transition-colors"
             >
               <X className="h-3 w-3 text-muted-foreground" />
             </button>
@@ -152,11 +154,11 @@ export function BriefInput({
 
 Example: 
 Our cardiovascular therapy is launching in Q3 2025. Key competitors include CardioMax and HeartGuard, who currently hold 60% market share combined. Our primary objective is to establish thought leadership among cardiologists while addressing the unmet needs of patients with treatment-resistant hypertension..."
-          className="min-h-[200px] resize-none border-0 bg-transparent text-base focus-visible:ring-0"
+          className="min-h-64 resize-none border-0 bg-transparent text-base font-light focus-visible:ring-0 px-6 py-6"
         />
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between border-t border-border/40 px-6 py-4">
+          <div className="flex items-center gap-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -167,7 +169,7 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
             />
             <label
               htmlFor="file-upload"
-              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
             >
               <Upload className="h-4 w-4" />
               Upload file
@@ -186,24 +188,24 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
       </div>
 
       {/* Research Library Section */}
-      <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm hover:border-border/70 transition-all duration-200">
-        <div className="flex w-full items-center justify-between p-5">
+      <div className="rounded-xl border border-border/40 bg-card/40 transition-all duration-300">
+        <div className="flex w-full items-center justify-between p-6">
           <div
-            className="flex flex-1 items-center gap-4 cursor-pointer transition-colors hover:opacity-80"
+            className="flex flex-1 items-center gap-5 cursor-pointer transition-opacity hover:opacity-70"
             onClick={() => setShowResearch(!showResearch)}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 shadow-sm">
-              <BookOpen className="h-4 w-4 text-primary font-medium" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/8 border border-primary/20">
+              <BookOpen className="h-4 w-4 text-primary/70" />
             </div>
-            <div>
-              <p className="font-medium text-foreground">Research Library</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-1">
+              <p className="font-medium text-foreground text-sm">Research Library</p>
+              <p className="text-xs text-muted-foreground">
                 {researchDocuments.length} documents available
                 {selectedResearch.length > 0 && ` • ${selectedResearch.length} selected`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {researchDocuments.length > 0 && (
               <div className="flex items-center gap-2">
                 <Switch
@@ -211,7 +213,7 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
                   checked={includeResearch}
                   onCheckedChange={setIncludeResearch}
                 />
-                <Label htmlFor="include-research" className="text-sm cursor-pointer">
+                <Label htmlFor="include-research" className="text-sm cursor-pointer font-light">
                   Include in analysis
                 </Label>
               </div>
@@ -219,13 +221,13 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
             <button
               type="button"
               onClick={() => setShowResearch(!showResearch)}
-              className="p-1 rounded hover:bg-muted transition-colors"
+              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
               aria-label={showResearch ? "Collapse research library" : "Expand research library"}
             >
               {showResearch ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                <ChevronUp className="h-5 w-5 text-muted-foreground/60" />
               ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                <ChevronDown className="h-5 w-5 text-muted-foreground/60" />
               )}
             </button>
           </div>
@@ -234,10 +236,10 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
         <div
           className={cn(
             "overflow-hidden transition-all duration-300",
-            showResearch ? "max-h-[600px]" : "max-h-0"
+            showResearch ? "max-h-96" : "max-h-0"
           )}
         >
-          <div className="border-t border-border p-4">
+          <div className="border-t border-border/40 p-6 space-y-4">
             <ResearchLibrary
               documents={researchDocuments}
               selectedDocuments={selectedResearch}
@@ -253,23 +255,25 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
 
       {/* Include research indicator */}
       {includeResearch && selectedResearch.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
-          <FolderOpen className="h-4 w-4 text-primary" />
-          <span className="text-sm text-foreground">
+        <div className="flex items-center gap-3 rounded-lg bg-primary/6 border border-primary/25 px-5 py-4">
+          <FolderOpen className="h-4 w-4 text-primary/70 shrink-0" />
+          <span className="text-sm text-foreground/80 font-light">
             {selectedResearch.length} research document{selectedResearch.length !== 1 ? "s" : ""} will be used to inform challenge statement generation and evaluation
           </span>
         </div>
       )}
 
-      <Button
-        onClick={() => onGenerate(includeResearch && selectedResearch.length > 0)}
-        disabled={!canGenerate || isLoading}
-        size="lg"
-        className="w-full gap-2 text-base font-semibold shadow-md hover:shadow-lg"
-      >
-        <Sparkles className={isLoading ? "h-5 w-5 animate-spin" : "h-5 w-5"} />
-        {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
-      </Button>
+      <div className="pt-4">
+        <Button
+          onClick={() => onGenerate(includeResearch && selectedResearch.length > 0)}
+          disabled={!canGenerate || isLoading}
+          size="lg"
+          className="w-full gap-2 text-base font-medium"
+        >
+          <Sparkles className={isLoading ? "h-5 w-5 animate-spin" : "h-5 w-5"} />
+          {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
+        </Button>
+      </div>
 
       {!canGenerate && value.length > 0 && (
         <p className="text-center text-sm text-muted-foreground">

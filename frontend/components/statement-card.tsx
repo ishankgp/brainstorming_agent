@@ -23,30 +23,30 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
     DEFAULT_FORMATS.find((f) => f.id === statement.selected_format)
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-border/80 border-border/50">
-      <CardContent className="p-8">
-        <div className="flex items-start gap-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-sm font-bold text-primary shadow-sm">
+    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-md border-border/40 bg-card/50">
+      <CardContent className="p-10">
+        <div className="flex items-start gap-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-primary">
             {index + 1}
           </div>
 
-          <div className="flex-1 space-y-5">
-            <p className="text-lg leading-relaxed text-foreground font-medium">
+          <div className="flex-1 space-y-6">
+            <p className="text-lg leading-relaxed text-foreground font-light">
               {statement.text}
             </p>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="gap-1.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="secondary" className="gap-2 font-light">
                 <Tag className="h-3 w-3" />
                 {statement.selected_format}
               </Badge>
               {format && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground font-light">
                   {format.name}
                 </span>
               )}
               {format?.category === "edge-case" && (
-                <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50">
+                <Badge variant="outline" className="text-xs border-amber-300/50 text-amber-700/80 bg-amber-50/50 font-light">
                   Edge Case Format
                 </Badge>
               )}
@@ -57,11 +57,11 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
               <EvaluationPanel evaluation={statement.evaluation} compact />
             )}
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => setShowReasoning(!showReasoning)}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground font-light w-fit"
               >
                 <Lightbulb className="h-4 w-4" />
                 {showReasoning ? "Hide reasoning" : "Show reasoning"}
@@ -76,7 +76,7 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
                 <button
                   type="button"
                   onClick={() => setShowEvaluation(!showEvaluation)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground font-light w-fit"
                 >
                   <ClipboardCheck className="h-4 w-4" />
                   {showEvaluation ? "Hide evaluation" : "Full evaluation"}
@@ -96,7 +96,7 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
                 showReasoning ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               )}
             >
-              <div className="rounded-lg bg-muted/40 border border-border/30 p-5 text-sm text-muted-foreground space-y-4">
+              <div className="rounded-lg bg-muted/20 border border-border/30 p-6 text-sm text-muted-foreground space-y-4">
                 <p className="flex items-start gap-2">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                   {statement.reasoning}

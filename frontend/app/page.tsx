@@ -206,7 +206,7 @@ export default function BrainstormAgent() {
     <div className="min-h-screen bg-background">
       <Header onOpenLibrary={() => setIsLibraryOpen(true)} />
 
-      <main className="mx-auto max-w-4xl px-6 py-10 md:py-16 lg:px-8">
+      <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
         {/* Input Section - Always visible when not in success state */}
         {appState !== "success" && (
           <BriefInput
