@@ -628,13 +628,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pdf",
     description:
       "Primary efficacy and safety data from the pivotal Phase 3 CLARITY trial comparing enzalutinib vs. standard of care in EGFR-mutated NSCLC.",
-    key_insights: [
-      "Median PFS of 18.9 months vs 10.2 months (HR 0.46, p<0.001)",
-      "Overall response rate: 84% vs 67% (p<0.01)",
-      "CNS progression-free survival: 24.3 months vs 13.8 months",
-      "Grade 3+ AEs in 28% vs 41% of patients",
-      "Dose modifications required in only 12% of Velozia patients",
-    ],
     uploaded_at: "2025-11-15",
     size_kb: 4250,
   },
@@ -645,13 +638,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pptx",
     description:
       "Comprehensive market analysis including competitor positioning, market share dynamics, and prescriber behavior patterns.",
-    key_insights: [
-      "Tagrisso holds 62% market share ($5.2B annual revenue)",
-      "Brain metastases present in 25-40% of EGFR+ patients at diagnosis",
-      "Only 34% of oncologists consider CNS protection in first-line selection",
-      "Average time to switch from first-line therapy: 14 months",
-      "Price sensitivity increasing with biosimilar competition in other categories",
-    ],
     uploaded_at: "2025-10-20",
     size_kb: 8900,
   },
@@ -662,13 +648,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pdf",
     description:
       "Quantitative survey of 450 medical oncologists on treatment decision factors for EGFR+ NSCLC.",
-    key_insights: [
-      "78% cite 'comfort with established agents' as top prescribing factor",
-      "Only 23% proactively discuss brain metastasis risk with patients",
-      "65% would consider switching if CNS superiority is clearly demonstrated",
-      "Trust in guideline recommendations rated 4.2/5.0 in importance",
-      "Average oncologist sees 12-15 EGFR+ patients per month",
-    ],
     uploaded_at: "2025-09-08",
     size_kb: 2100,
   },
@@ -679,13 +658,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pdf",
     description:
       "Detailed analysis of AstraZeneca's Tagrisso positioning, messaging, and market defense strategies.",
-    key_insights: [
-      "Tagrisso messaging centers on 'proven track record' and guideline inclusion",
-      "Heavy investment in KOL relationships (50+ advisory boards in 2024)",
-      "Digital HCP engagement platform reaches 85% of target oncologists",
-      "Patient support program rated highest in category satisfaction",
-      "Anticipated counter-strategy: emphasize long-term safety data advantage",
-    ],
     uploaded_at: "2025-08-25",
     size_kb: 3400,
   },
@@ -696,13 +668,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pptx",
     description:
       "Qualitative research on the patient experience from diagnosis through treatment initiation and ongoing management.",
-    key_insights: [
-      "87% of patients unaware of brain metastasis risk at diagnosis",
-      "Fear of 'newer' treatments common - prefer 'tried and tested'",
-      "Caregiver influence significant in treatment decisions (rated 4.1/5.0)",
-      "Information overload cited as major stressor by 62% of patients",
-      "Quality of life concerns often unexpressed until prompted",
-    ],
     uploaded_at: "2025-07-12",
     size_kb: 5600,
   },
@@ -713,13 +678,6 @@ export const SAMPLE_RESEARCH_DOCUMENTS: ResearchDocument[] = [
     file_type: "pdf",
     description:
       "Summary of FDA new drug application including approved indications, labeling language, and promotional guidelines.",
-    key_insights: [
-      "Approved indication: first-line treatment for EGFR-mutated metastatic NSCLC",
-      "CNS efficacy can be promoted based on secondary endpoint data",
-      "Black box warning not required (safety profile favorable)",
-      "Comparative claims vs. SOC permitted with appropriate context",
-      "Post-marketing studies required for long-term outcomes data",
-    ],
     uploaded_at: "2025-12-01",
     size_kb: 1800,
   },
@@ -734,8 +692,7 @@ export const generateMockResearchReferences = (): ResearchReference[] => {
   return shuffled.slice(0, numRefs).map((doc) => ({
     document_id: doc.id,
     document_name: doc.name,
-    relevant_insight:
-      doc.key_insights[Math.floor(Math.random() * doc.key_insights.length)],
+    relevant_insight: doc.description,
     relevance_score: Math.floor(Math.random() * 2) + 4, // 4-5
   }))
 }

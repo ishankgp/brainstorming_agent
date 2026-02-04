@@ -39,32 +39,44 @@ function BrainstormAgentContent() {
     useState<DiagnosticRule[]>(DEFAULT_DIAGNOSTIC_RULES)
 
   // Research Library state
-  const [researchDocuments, setResearchDocuments] = useState<ResearchDocument[]>(
-    SAMPLE_RESEARCH_DOCUMENTS
-  )
+  const [researchDocuments, setResearchDocuments] = useState<ResearchDocument[]>([])
   const [selectedResearch, setSelectedResearch] = useState<string[]>([])
   const [lastIncludeResearch, setLastIncludeResearch] = useState<boolean>(false)
 
-  // Load formats from localStorage on mount
+  // Load initial data on mount
   useEffect(() => {
+    // 1. Load LocalStorage Settings
     const savedFormats = localStorage.getItem("brainstorm-formats")
     const savedRules = localStorage.getItem("brainstorm-rules")
 
     if (savedFormats) {
       try {
         setFormats(JSON.parse(savedFormats))
-      } catch {
-        // Use defaults if parse fails
-      }
+      } catch { }
     }
 
     if (savedRules) {
       try {
         setDiagnosticRules(JSON.parse(savedRules))
-      } catch {
-        // Use defaults if parse fails
+      } catch { }
+    }
+
+    // 2. Fetch Research Documents from Backend
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/research-documents')
+        if (res.ok) {
+          const data = await res.json()
+          setResearchDocuments(data)
+        } else {
+          console.error("Failed to fetch documents:", res.status)
+        }
+      } catch (e) {
+        console.error("Error loading research documents:", e)
       }
     }
+
+    fetchDocuments()
   }, [])
 
   // Save formats to localStorage when updated

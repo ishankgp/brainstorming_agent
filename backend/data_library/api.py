@@ -422,7 +422,15 @@ async def upload_research_document(
     db.commit()
     db.refresh(doc)
     
-    return {"id": doc.id, "status": "uploaded", "gemini_status": "synced" if doc.gemini_file_id else "local_only"}
+    return {
+        "id": doc.id,
+        "name": doc.name,
+        "type": doc.type,
+        "file_type": doc.file_type,
+        "description": doc.description,
+        "uploaded_at": doc.uploaded_at.strftime("%Y-%m-%d") if doc.uploaded_at else "",
+        "size_kb": doc.size_kb
+    }
 
 @app.delete("/api/research-documents/{doc_id}")
 async def delete_research_document(doc_id: str, db: Session = Depends(get_db_session)):

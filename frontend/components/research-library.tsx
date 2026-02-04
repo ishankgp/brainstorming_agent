@@ -83,37 +83,70 @@ export function ResearchLibrary({
 }: ResearchLibraryProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const filteredDocuments = documents.filter(
     (doc) =>
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.key_insights.some((insight) =>
-        insight.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      doc.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const allSelected = documents.length > 0 && selectedDocuments.length === documents.length
   const someSelected = selectedDocuments.length > 0 && !allSelected
 
-  const handleSimulatedUpload = () => {
-    // In a real app, this would open a file picker
-    // For now, we simulate adding a new document
-    const newDoc: ResearchDocument = {
-      id: `RD${(documents.length + 1).toString().padStart(3, "0")}`,
-      name: `New Research Document ${documents.length + 1}`,
-      type: "other",
-      file_type: "pdf",
-      description: "Newly uploaded document - description pending review.",
-      key_insights: ["Key insight will be extracted after processing"],
-      uploaded_at: new Date().toISOString().split("T")[0],
-      size_kb: Math.floor(Math.random() * 5000) + 500,
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+
+    // Prepare form data
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("type", "other") // Default type
+    formData.append("description", "Uploaded via Research Library")
+
+    try {
+      const response = await fetch("http://localhost:8000/api/research-documents/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Upload failed")
+      }
+
+      const newDoc: ResearchDocument = await response.json()
+      onAddDocument(newDoc)
+
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      alert("Failed to upload file. Please try again.")
+    } finally {
+      setIsUploading(false)
     }
-    onAddDocument(newDoc)
   }
 
   return (
     <div className="space-y-4">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".pdf,.txt,.md,.docx"
+      />
+
       {/* Header with search and actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
@@ -136,11 +169,16 @@ export function ResearchLibrary({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSimulatedUpload}
+            onClick={handleUploadClick}
+            disabled={isUploading}
             className="gap-1.5 bg-transparent"
           >
-            <Upload className="h-3.5 w-3.5" />
-            Upload
+            {isUploading ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
+            {isUploading ? "Uploading..." : "Upload"}
           </Button>
         </div>
       </div>
@@ -176,16 +214,21 @@ export function ResearchLibrary({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleSimulatedUpload}
+              onClick={handleUploadClick}
+              disabled={isUploading}
               className="mt-3 gap-1.5 bg-transparent"
             >
-              <Plus className="h-3.5 w-3.5" />
-              Add Document
+              {isUploading ? (
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+              {isUploading ? "Uploading..." : "Add Document"}
             </Button>
           </div>
         ) : (
           filteredDocuments.map((doc) => {
-            const typeConfig = DOCUMENT_TYPE_CONFIG[doc.type]
+            const typeConfig = DOCUMENT_TYPE_CONFIG[doc.type as ResearchDocumentType] || DOCUMENT_TYPE_CONFIG.other
             const TypeIcon = typeConfig.icon
             const isSelected = selectedDocuments.includes(doc.id)
             const isExpanded = expandedDoc === doc.id
@@ -240,27 +283,7 @@ export function ResearchLibrary({
                         </button>
                       </div>
 
-                      {/* Key insights - always visible */}
-                      <div className="mt-3">
-                        <p className="text-xs font-medium text-foreground mb-2">
-                          Key Insights ({doc.key_insights.length})
-                        </p>
-                        <div className="rounded-lg bg-muted/50 p-3 space-y-2">
-                          {doc.key_insights.map((insight, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                                {idx + 1}
-                              </span>
-                              <span className="text-muted-foreground leading-relaxed">
-                                {insight}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+
 
                       <p className="mt-2 text-xs text-muted-foreground">
                         Uploaded: {doc.uploaded_at}

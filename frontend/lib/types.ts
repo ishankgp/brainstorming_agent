@@ -74,7 +74,6 @@ export interface ResearchDocument {
   type: ResearchDocumentType
   file_type: "pdf" | "ppt" | "pptx" | "doc" | "docx"
   description: string
-  key_insights: string[]
   uploaded_at: string
   size_kb: number
 }
