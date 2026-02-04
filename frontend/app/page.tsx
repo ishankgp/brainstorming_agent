@@ -42,6 +42,7 @@ export default function BrainstormAgent() {
     SAMPLE_RESEARCH_DOCUMENTS
   )
   const [selectedResearch, setSelectedResearch] = useState<string[]>([])
+  const [lastIncludeResearch, setLastIncludeResearch] = useState<boolean>(false)
 
   // Load formats from localStorage on mount
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function BrainstormAgent() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleGenerate = async (includeResearch: boolean) => {
+    setLastIncludeResearch(includeResearch)
     setAppState("loading")
     setError(null)
     console.log("🚀 Starting generation request...")
@@ -197,7 +199,7 @@ export default function BrainstormAgent() {
 
   const handleRetry = () => {
     setError(null)
-    handleGenerate(includeResearch)
+    handleGenerate(lastIncludeResearch)
   }
 
   return (
