@@ -34,7 +34,10 @@ A powerful, AI-driven brainstorming platform designed for pharma marketing and s
 - Gemini API Key
 
 ### Backend Setup
-1. Navigate to the root directory.
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 2. Create a virtual environment:
    ```bash
    python -m venv venv
@@ -44,7 +47,7 @@ A powerful, AI-driven brainstorming platform designed for pharma marketing and s
    ```bash
    pip install -r requirements.txt
    ```
-4. Create a `.env` file (see `.env.example` if available) and add your API keys:
+4. Create a `.env` file in the `backend/` directory and add your API keys:
    ```env
    GEMINI_API_KEY=your_key_here
    ```
@@ -54,7 +57,7 @@ A powerful, AI-driven brainstorming platform designed for pharma marketing and s
    ```
 
 ### Frontend Setup
-1. Navigate to the `frontend` directory:
+1. Navigate to the frontend directory:
    ```bash
    cd frontend
    ```
@@ -66,6 +69,13 @@ A powerful, AI-driven brainstorming platform designed for pharma marketing and s
    ```bash
    npm run dev
    ```
+
+### Quick Start (Both Services)
+From the root directory, run:
+```powershell
+.\run_app.ps1
+```
+This will start both backend and frontend in separate windows.
 
 ## 🖥 Usage
 

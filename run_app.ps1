@@ -1,4 +1,3 @@
-
 # Agentic Data Library - Start Script
 
 # 0. Kill ALL Python processes to ensure clean start
@@ -26,12 +25,12 @@ if ($frontendPort) {
 
 # 3. Start Backend in a new window
 Write-Host "🚀 Launching Backend API..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Backend ---' -ForegroundColor Cyan; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Backend ---' -ForegroundColor Cyan; cd backend; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000"
 
 # 4. Start Frontend in a new window
 Write-Host "🎨 Launching Frontend (Next.js)..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Frontend ---' -ForegroundColor Green; cd my-app; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Frontend ---' -ForegroundColor Green; cd frontend; npm run dev"
 
-Write-Host "`nAll systems launching. check the new windows for logs." -ForegroundColor White
-Write-Host "Backend: http://localhost:8000"
-Write-Host "Frontend: http://localhost:3000"
+Write-Host "`nAll systems launching. Check the new windows for logs." -ForegroundColor White
+Write-Host "Backend: http://localhost:8000" -ForegroundColor Cyan
+Write-Host "Frontend: http://localhost:3000" -ForegroundColor Green
