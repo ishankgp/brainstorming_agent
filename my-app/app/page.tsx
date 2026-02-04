@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { AlertCircle } from "lucide-react"
 import { Header } from "@/components/header"
 import { BriefInput } from "@/components/brief-input"
@@ -102,17 +102,22 @@ export default function BrainstormAgent() {
     setSelectedResearch((prev) => prev.filter((id) => id !== docId))
   }
 
+  // Use a ref for the timeout to ensure it persists and handles weird closure issues
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleGenerate = async (includeResearch: boolean) => {
     setAppState("loading")
     setError(null)
     console.log("🚀 Starting generation request...")
 
-    let activeTimeout: any = null
-
     try {
-      // 1. Setup AbortController for 60s timeout
+      // 1. Setup AbortController for 120s timeout
       const controller = new AbortController()
-      activeTimeout = setTimeout(() => {
+
+      // Clear any existing timeout
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+      timeoutRef.current = setTimeout(() => {
         console.warn("⏰ Request timed out! Aborting after 120 seconds...")
         controller.abort()
       }, 120000)
@@ -133,9 +138,9 @@ export default function BrainstormAgent() {
       })
 
       // 3. Cleanup timeout immediately
-      if (activeTimeout) {
-        clearTimeout(activeTimeout)
-        activeTimeout = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
       }
 
       console.log(`📥 Response status: ${response.status}`)
@@ -162,9 +167,9 @@ export default function BrainstormAgent() {
       setAppState("success")
     } catch (err) {
       // Ensure timeout is cleared on error too
-      if (activeTimeout) {
-        clearTimeout(activeTimeout)
-        activeTimeout = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
       }
 
       console.error("🚨 Generation failed:", err)
@@ -172,7 +177,7 @@ export default function BrainstormAgent() {
       let errorMessage = "An unexpected error occurred"
       if (err instanceof Error) {
         if (err.name === 'AbortError') {
-          errorMessage = "Request timed out after 60 seconds. The model might be busy."
+          errorMessage = "Request timed out after 120 seconds. The model might be busy."
         } else {
           errorMessage = err.message
         }

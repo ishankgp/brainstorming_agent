@@ -94,6 +94,15 @@ class ResearchDocumentResponse(BaseModel):
     size_kb: int
 
 # ============================================================================
+# HEALTH CHECK
+# ============================================================================
+
+@app.get("/health")
+async def health_check():
+    """Simple health check endpoint."""
+    return {"status": "ok", "message": "API is running"}
+
+# ============================================================================
 # CHALLENGE GENERATION ENDPOINTS
 # ============================================================================
 
@@ -119,11 +128,21 @@ async def generate_challenge_statements(
         db.refresh(session)
         
         # 2. Generate challenges
-        result = await generate_challenges(
-            brief_text=request.brief_text,
-            include_research=request.include_research,
-            selected_research_ids=request.selected_research_ids or []
-        )
+        print(f"📝 Starting challenge generation...")
+        import time
+        start_time = time.time()
+        
+        try:
+            result = await generate_challenges(
+                brief_text=request.brief_text,
+                include_research=request.include_research,
+                selected_research_ids=request.selected_research_ids or []
+            )
+            elapsed = time.time() - start_time
+            print(f"✅ Generation completed in {elapsed:.2f}s")
+        except Exception as gen_error:
+            print(f"❌ Generation failed: {gen_error}")
+            raise
         
         # 3. Save results to DB
         session.diagnostic_summary = result["diagnostic_summary"]

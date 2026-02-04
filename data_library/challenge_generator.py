@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Model configuration
-GEMINI_PRO_MODEL = "gemini-2.0-flash-exp"  # Using Flash initially, can switch to Pro
+GEMINI_PRO_MODEL = "gemini-2.0-flash"  # Stable production model
 
 # ============================================================================
 # 12 CHALLENGE FORMATS (from frontend mock-data.ts)
