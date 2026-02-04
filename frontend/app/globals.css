@@ -4,35 +4,35 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.99 0.001 240);
-  /* Premium light background */
-  --foreground: oklch(0.12 0.02 250);
-  /* Rich dark blue */
+  --background: oklch(0.995 0.0005 240);
+  /* Almost pure white, minimal tint */
+  --foreground: oklch(0.15 0.015 250);
+  /* Subtle dark blue */
   --card: oklch(1 0 0);
-  /* Pure white */
-  --card-foreground: oklch(0.12 0.02 250);
+  /* Pure white for cards */
+  --card-foreground: oklch(0.15 0.015 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.12 0.02 250);
+  --popover-foreground: oklch(0.15 0.015 250);
   --primary: oklch(0.48 0.24 265);
-  /* Enhanced vibrant blue */
+  /* Vibrant blue - maintained */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.01 250);
-  /* Soft light blue */
-  --secondary-foreground: oklch(0.25 0.01 265);
-  --muted: oklch(0.93 0.008 250);
-  /* Refined muted background */
-  --muted-foreground: oklch(0.55 0.03 250);
-  /* Improved muted text */
+  --secondary: oklch(0.97 0.004 250);
+  /* Very light secondary */
+  --secondary-foreground: oklch(0.2 0.01 265);
+  --muted: oklch(0.96 0.003 250);
+  /* Lighter muted background */
+  --muted-foreground: oklch(0.58 0.02 250);
+  /* Lighter muted text */
   --accent: oklch(0.62 0.18 265);
   /* Secondary blue accent */
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.58 0.25 25);
   /* Rich red */
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0.008 250);
-  /* Refined border */
-  --input: oklch(0.96 0.005 250);
-  /* Input background */
+  --border: oklch(0.93 0.005 250);
+  /* Very subtle border */
+  --input: oklch(0.97 0.004 250);
+  /* Light input background */
   --ring: oklch(0.48 0.24 265);
   /* Enhanced ring color */
   --chart-1: oklch(0.48 0.24 265);
@@ -46,7 +46,7 @@
   --chart-5: oklch(0.62 0.15 220);
   /* Azure accent */
   --radius: 0.625rem;
-  /* Modern rounded corners */
+  /* Subtle rounded corners */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.12 0.02 250);
   --sidebar-primary: oklch(0.48 0.24 265);
@@ -158,27 +158,27 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-medium tracking-tight text-foreground;
   }
 
   h1 {
-    @apply text-3xl md:text-4xl;
+    @apply text-4xl md:text-5xl leading-tight;
   }
 
   h2 {
-    @apply text-2xl md:text-3xl;
+    @apply text-3xl md:text-4xl leading-tight;
   }
 
   h3 {
-    @apply text-lg md:text-xl;
+    @apply text-xl md:text-2xl;
   }
 
   p {
-    @apply leading-relaxed;
+    @apply leading-relaxed text-foreground/85;
   }
 
   button, input, select, textarea {
-    @apply transition-colors duration-200;
+    @apply transition-all duration-300;
   }
 
   /* Smooth scrolling */
@@ -188,6 +188,35 @@
 
   /* Selection styling */
   ::selection {
-    @apply bg-primary/20 text-foreground;
+    @apply bg-primary/15 text-foreground;
+  }
+
+  /* Spacious workspace styling */
+  main {
+    @apply space-y-16;
+  }
+
+  /* Minimize visual noise */
+  input:focus-visible,
+  textarea:focus-visible {
+    @apply ring-1 ring-offset-1;
+  }
+}
+
+/* Enhance text rendering for minimalist aesthetic */
+@supports (font-size-adjust: from-font) {
+  body {
+    font-size-adjust: from-font;
+  }
+}
+
+/* Enhanced spacing utilities */
+@layer components {
+  .space-relaxed {
+    @apply space-y-10;
+  }
+
+  .p-spacious {
+    @apply p-10;
   }
 }
