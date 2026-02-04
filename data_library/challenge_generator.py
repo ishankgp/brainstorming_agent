@@ -29,6 +29,46 @@ def get_client():
 
 # Model configuration
 GEMINI_PRO_MODEL = "gemini-2.0-flash"  # Stable production model
+GEMINI_3_PRO_MODEL = "gemini-3-pro-preview"  # Advanced reasoning for diagnostics
+
+# ============================================================================
+# STRUCTURED OUTPUT SCHEMA FOR DIAGNOSTIC ANALYSIS
+# ============================================================================
+
+def get_diagnostic_schema():
+    """Define structured output schema for diagnostic analysis."""
+    return types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "diagnostic_path": types.Schema(
+                type=types.Type.ARRAY,
+                items=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "question": types.Schema(type=types.Type.STRING),
+                        "answer": types.Schema(type=types.Type.STRING),
+                        "reasoning": types.Schema(type=types.Type.STRING),
+                        "confidence": types.Schema(type=types.Type.NUMBER)
+                    },
+                    required=["question", "answer", "reasoning", "confidence"]
+                )
+            ),
+            "selected_formats": types.Schema(
+                type=types.Type.ARRAY,
+                items=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "format_id": types.Schema(type=types.Type.STRING),
+                        "reasoning": types.Schema(type=types.Type.STRING),
+                        "priority": types.Schema(type=types.Type.INTEGER)
+                    },
+                    required=["format_id", "reasoning", "priority"]
+                )
+            ),
+            "diagnostic_summary": types.Schema(type=types.Type.STRING)
+        },
+        required=["diagnostic_path", "selected_formats", "diagnostic_summary"]
+    )
 
 # ============================================================================
 # 12 CHALLENGE FORMATS (from frontend mock-data.ts)
@@ -165,15 +205,16 @@ async def generate_challenges(
     """
     logger.info(f"Generating challenges for brief (length: {len(brief_text)})")
     
-    # Step 1: Run diagnostic decision tree
-    diagnostic_path = run_diagnostic_tree(brief_text)
-    logger.info(f"Diagnostic path: {len(diagnostic_path)} steps")
+    # Step 1: Run LLM-based diagnostic (replaces keyword matching)
+    diagnostic_result = await run_diagnostic_tree_with_llm(brief_text)
     
-    # Step 2: Select formats based on decision tree
-    selected_formats = select_formats_from_path(diagnostic_path, brief_text)
-    logger.info(f"Selected formats: {selected_formats}")
+    diagnostic_path = diagnostic_result["diagnostic_path"]
+    selected_formats = [f["format_id"] for f in diagnostic_result["selected_formats"]]
+    diagnostic_summary = diagnostic_result["diagnostic_summary"]
     
-    # Step 3: Generate challenge statements with Gemini
+    logger.info(f"Diagnostic complete: {len(diagnostic_path)} questions, {len(selected_formats)} formats")
+    
+    # Step 2: Generate challenge statements with Gemini
     challenge_statements = await generate_statements_with_ai(
         brief_text=brief_text,
         selected_formats=selected_formats,
@@ -208,14 +249,129 @@ async def generate_challenges(
             if "evaluation" not in stmt:
                 stmt["evaluation"] = create_default_evaluation()
     
-    # Step 5: Generate diagnostic summary
-    diagnostic_summary = create_diagnostic_summary(diagnostic_path, selected_formats)
+    # Step 5: Return results (diagnostic_summary already from LLM)
     
     return {
         "challenge_statements": challenge_statements[:5],  # Exactly 5
         "diagnostic_summary": diagnostic_summary,
         "diagnostic_path": diagnostic_path
     }
+
+# ============================================================================
+# LLM-BASED DIAGNOSTIC DECISION TREE (Gemini 3 Pro)
+# ============================================================================
+
+async def run_diagnostic_tree_with_llm(brief_text: str) -> Dict[str, Any]:
+    """
+    Use Gemini 3 Pro to analyze brief and select formats intelligently.
+    
+    Replaces keyword-matching with LLM-based semantic understanding.
+    
+    Returns:
+    {
+        "diagnostic_path": [...],  # Q&A with confidence scores
+        "selected_formats": [...],  # 5 formats with reasoning & priority
+        "diagnostic_summary": "..."
+    }
+    """
+    logger.info("Running LLM-based diagnostic analysis...")
+    
+    # Build format descriptions for the prompt
+    format_descriptions = "\n".join([
+        f"{f_id} - {CHALLENGE_FORMATS[f_id]['name']}: {CHALLENGE_FORMATS[f_id]['template']}"
+        for f_id in CHALLENGE_FORMATS.keys()
+    ])
+    
+    prompt = f"""You are an expert pharmaceutical marketing strategist. Analyze this marketing brief using a diagnostic decision tree, then select the most appropriate challenge statement formats.
+
+## TASK 1: Diagnostic Decision Tree
+
+Answer these questions about the brief. Follow the tree structure:
+
+**Q1: Is the audience already behaving the way we want?**
+- Look for: adoption, current usage, established behaviors, existing prescribing patterns
+- Answer: "yes" or "no"
+- Provide: reasoning (2-3 sentences) + confidence (0.0-1.0)
+
+**Q2 [If Q1=yes]: Is this behavior at risk of eroding?**
+- Look for: declining usage, competitive pressure, doubts, market share loss
+- Answer: "yes" or "no"
+- Provide: reasoning + confidence
+
+**Q3 [If Q1=no]: Does the audience know what to do, but hesitate emotionally or professionally?**
+- Look for: fear, risk concerns, professional barriers, hesitation, reluctance
+- Answer: "yes" or "no"
+- Provide: reasoning + confidence
+
+**Q4 [If Q3=no]: Is the primary barrier a dominant belief or mental model?**
+- Look for: beliefs, perceptions, mindsets, mental models, assumptions
+- Answer: "yes" or "no"
+- Provide: reasoning + confidence
+
+**Q5 [If Q4=no]: Is the audience overwhelmed or paralyzed by complexity?**
+- Look for: complexity, confusion, information overload, decision paralysis
+- Answer: "yes" or "no"
+- Provide: reasoning + confidence
+
+## TASK 2: Format Selection
+
+Based on your diagnostic analysis, select EXACTLY 5 challenge formats from this list:
+
+{format_descriptions}
+
+Selection criteria:
+1. **Relevance**: Format must address the identified barriers/opportunities
+2. **Priority**: Rank formats 1-5 (1=most critical, 5=least critical)
+3. **Reasoning**: Explain why each format is appropriate for this brief
+
+## MARKETING BRIEF:
+{brief_text}
+
+## OUTPUT FORMAT:
+Return structured JSON with:
+- diagnostic_path: Array of Q&A objects (question, answer, reasoning, confidence)
+- selected_formats: Array of exactly 5 format objects (format_id, reasoning, priority)
+- diagnostic_summary: 2-3 sentence summary of the analysis
+
+Be specific and cite evidence from the brief in your reasoning."""
+
+    try:
+        response = get_client().models.generate_content(
+            model=GEMINI_3_PRO_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=get_diagnostic_schema(),
+                temperature=0.3  # Lower temp for analytical tasks
+            )
+        )
+        
+        # Parse response
+        result = json.loads(response.text)
+        
+        # Clean up format_ids (LLM might return "F09 - Risk-of-Inaction" instead of "F09")
+        for fmt in result["selected_formats"]:
+            # Extract just the format ID (F01-F12)
+            format_id = fmt["format_id"].split(" ")[0].split("-")[0].strip()
+            fmt["format_id"] = format_id
+        
+        # Validate we got exactly 5 formats
+        if len(result["selected_formats"]) != 5:
+            raise ValueError(f"Expected 5 formats, got {len(result['selected_formats'])}")
+        
+        # Validate all format IDs are valid
+        for fmt in result["selected_formats"]:
+            if fmt["format_id"] not in CHALLENGE_FORMATS:
+                raise ValueError(f"Invalid format_id: {fmt['format_id']}")
+        
+        logger.info(f"Diagnostic complete: {len(result['diagnostic_path'])} questions answered")
+        logger.info(f"Selected formats: {[f['format_id'] for f in result['selected_formats']]}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"LLM diagnostic failed: {e}")
+        raise  # Fail fast, no fallback to keywords
 
 # ============================================================================
 # DIAGNOSTIC DECISION TREE (matches frontend mock-data.ts:608-750)
