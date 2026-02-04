@@ -343,6 +343,7 @@ Be specific and cite evidence from the brief in your reasoning."""
                 response_mime_type="application/json",
                 response_schema=get_diagnostic_schema(),
                 temperature=0.3  # Lower temp for analytical tasks
+                # Note: thinking_level defaults to HIGH for gemini-3-pro-preview
             )
         )
         
