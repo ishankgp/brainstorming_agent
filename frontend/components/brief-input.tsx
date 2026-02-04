@@ -267,7 +267,7 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
         size="lg"
         className="w-full gap-2 text-base font-semibold shadow-md hover:shadow-lg"
       >
-        <Sparkles className={cn("h-5 w-5", isLoading && "animate-spin")} />
+        <Sparkles className={isLoading ? "h-5 w-5 animate-spin" : "h-5 w-5"} />
         {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
       </Button>
 
