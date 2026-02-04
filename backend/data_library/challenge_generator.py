@@ -194,7 +194,8 @@ EVALUATION_DIMENSIONS = {
 async def generate_challenges_stream(
     brief_text: str,
     include_research: bool,
-    selected_research_ids: List[str]
+    selected_research_ids: List[str],
+    research_docs: List[Dict[str, str]] = None
 ) -> AsyncGenerator[str, None]:
     """
     Generator that streams execution progress and results as JSON events.
@@ -204,7 +205,30 @@ async def generate_challenges_stream(
     {"type": "challenge_result", "data": {...}}
     """
     logger.info(f"Generating challenges (stream) for brief length: {len(brief_text)}")
-    
+
+    # Prepare Research Files (Long Context)
+    research_files = []
+    if research_docs:
+        import mimetypes
+        logger.info(f"Processing {len(research_docs)} research docs for context...")
+        for doc in research_docs:
+            uri = doc.get("gemini_uri")
+            if uri:
+                mime_type = doc.get("mime_type")
+                if not mime_type and doc.get("name"):
+                     mime_type, _ = mimetypes.guess_type(doc["name"])
+                
+                if not mime_type:
+                    mime_type = "application/pdf" # Default
+                
+                try:
+                    # Create Part object for Long Context
+                    part = types.Part.from_uri(file_uri=uri, mime_type=mime_type)
+                    research_files.append(part)
+                    logger.info(f"Added context: {doc.get('name')} ({mime_type})")
+                except Exception as e:
+                    logger.error(f"Failed to create part for {doc.get('name')}: {e}")
+
     # Step 1: Run Diagnostic
     start_time = time.time()
     diagnostic_result = await run_diagnostic_tree_with_llm(brief_text)
@@ -232,6 +256,7 @@ async def generate_challenges_stream(
             brief_text=brief_text,
             include_research=include_research,
             research_ids=selected_research_ids,
+            research_files=research_files,
             reasoning=next(
                 (f["reasoning"] for f in diagnostic_result["selected_formats"] if f["format_id"] == fmt_id),
                 "Selected by diagnostic"
@@ -259,7 +284,8 @@ async def process_single_challenge_task(
     brief_text: str,
     include_research: bool,
     research_ids: List[str],
-    reasoning: str
+    reasoning: str,
+    research_files: List[Any] = None
 ) -> Dict[str, Any]:
     """
     Generates AND evaluates a single challenge statement.
@@ -270,7 +296,8 @@ async def process_single_challenge_task(
         statement_data = await generate_single_statement_with_ai(
             brief_text=brief_text,
             format_id=format_id,
-            reasoning=reasoning
+            reasoning=reasoning,
+            research_files=research_files
         )
         
         # B. Evaluate Statement
@@ -421,10 +448,11 @@ Be specific and cite evidence from the brief in your reasoning."""
 async def generate_single_statement_with_ai(
     brief_text: str,
     format_id: str,
-    reasoning: str
+    reasoning: str,
+    research_files: List[Any] = None
 ) -> Dict[str, Any]:
     """
-    Generates a SINGLE challenge statement for a specific format.
+    Generates a SINGLE challenge statement for a specific format, optionally utilizing research files.
     """
     format_def = CHALLENGE_FORMATS[format_id]
     
@@ -443,6 +471,7 @@ Task: Generate ONE high-quality challenge statement using this format.
 
 1. "How can we..." question applying the template.
 2. Specific to the brand/audience in the brief.
+3. If research documents are provided, cite or use them implicitly to ground the challenge.
 
 Return JSON:
 {{
@@ -451,9 +480,14 @@ Return JSON:
 }}"""
 
     try:
+        contents = [prompt]
+        if research_files:
+            # Append file objects/parts to the content list (Long Context)
+            contents.extend(research_files)
+
         response = get_client().models.generate_content(
             model=GEMINI_PRO_MODEL,
-            contents=prompt,
+            contents=contents,
             config=types.GenerateContentConfig(
                 temperature=0.7,
                 response_mime_type="application/json"
@@ -672,3 +706,28 @@ def create_default_evaluation() -> Dict[str, Any]:
         "research_references": [],
         "detected_format_id": "F01"
     }
+
+# ============================================================================
+# GEMINI RAG / FILE MANAGEMENT
+# ============================================================================
+
+async def upload_file_to_gemini_corpus(file_path: str, display_name: str):
+    """Upload a local file to Gemini Files API."""
+    client = get_client()
+    import mimetypes
+    
+    try:
+        mime_type, _ = mimetypes.guess_type(file_path)
+        
+        # Simple Files API Upload (Long Context Model Support)
+        logger.info(f"Uploading {display_name} to Gemini...")
+        uploaded_file = client.files.upload(
+            file=file_path,
+            config=types.UploadFileConfig(display_name=display_name, mime_type=mime_type)
+        )
+        logger.info(f"Uploaded file {uploaded_file.name} to Gemini.")
+        return uploaded_file
+        
+    except Exception as e:
+        logger.error(f"Gemini Upload Error: {e}")
+        return None

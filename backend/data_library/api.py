@@ -154,10 +154,20 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
     Wraps the core generator to save results to DB while streaming to client.
     """
     try:
+        # Fetch research docs for RAG context
+        research_docs_data = []
+        if request.include_research and request.selected_research_ids:
+            docs = db.query(ResearchDocument).filter(ResearchDocument.id.in_(request.selected_research_ids)).all()
+            research_docs_data = [
+                {"gemini_uri": doc.gemini_uri, "name": doc.name}
+                for doc in docs if doc.gemini_uri
+            ]
+
         async for chunk_str in generate_challenges_stream(
             brief_text=request.brief_text,
             include_research=request.include_research,
-            selected_research_ids=request.selected_research_ids or []
+            selected_research_ids=request.selected_research_ids or [],
+            research_docs=research_docs_data
         ):
             # 1. Parse chunk
             try:
@@ -396,11 +406,23 @@ async def upload_research_document(
         description=description,
         size_kb=len(content) // 1024
     )
+
+    # --- GEMINI UPLOAD ---
+    try:
+        from data_library.challenge_generator import upload_file_to_gemini_corpus
+        gemini_file = await upload_file_to_gemini_corpus(file_path, file.filename)
+        if gemini_file:
+             doc.gemini_file_id = gemini_file.name # Expected to be the "names/{id}" or "corpora/.../documents/{id}"
+             doc.gemini_uri = gemini_file.uri if hasattr(gemini_file, 'uri') else None
+    except Exception as e:
+        print(f"Gemini Upload Failed: {e}")
+        # We proceed even if Gemini fails, but maybe flag it? for now just log.
+
     db.add(doc)
     db.commit()
     db.refresh(doc)
     
-    return {"id": doc.id, "status": "uploaded"}
+    return {"id": doc.id, "status": "uploaded", "gemini_status": "synced" if doc.gemini_file_id else "local_only"}
 
 @app.delete("/api/research-documents/{doc_id}")
 def delete_research_document(doc_id: str, db: Session = Depends(get_db_session)):

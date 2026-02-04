@@ -183,6 +183,10 @@ class ResearchDocument(Base):
     file_path = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     
+    # Gemini Metadata
+    gemini_file_id = Column(String, nullable=True)
+    gemini_uri = Column(String, nullable=True)
+    
     # Metadata
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
     size_kb = Column(Integer, nullable=False)

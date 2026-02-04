@@ -1,0 +1,5 @@
+This is a test research document about Pharma Marketing.
+It states that "Doctors are 50% more likely to prescribe Brand X if they understand its mechanism of action."
+And "Patients fear side effects more than lack of efficacy."
+This document should be cited by the AI.
+gemini_integration_test_marker: 12345
