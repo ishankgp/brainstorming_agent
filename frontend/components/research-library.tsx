@@ -234,6 +234,7 @@ export function ResearchLibrary({
                           type="button"
                           onClick={() => onRemoveDocument(doc.id)}
                           className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          suppressHydrationWarning
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
