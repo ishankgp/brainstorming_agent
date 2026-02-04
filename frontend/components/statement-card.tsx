@@ -23,15 +23,15 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
     DEFAULT_FORMATS.find((f) => f.id === statement.selected_format)
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-border/80 border-border/50">
+      <CardContent className="p-8">
+        <div className="flex items-start gap-5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-sm font-bold text-primary shadow-sm">
             {index + 1}
           </div>
 
-          <div className="flex-1 space-y-4">
-            <p className="text-lg leading-relaxed text-foreground">
+          <div className="flex-1 space-y-5">
+            <p className="text-lg leading-relaxed text-foreground font-medium">
               {statement.text}
             </p>
 
@@ -93,10 +93,10 @@ export function StatementCard({ statement, index, formats }: StatementCardProps)
             <div
               className={cn(
                 "overflow-hidden transition-all duration-300",
-                showReasoning ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+                showReasoning ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               )}
             >
-              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-3">
+              <div className="rounded-lg bg-muted/40 border border-border/30 p-5 text-sm text-muted-foreground space-y-4">
                 <p className="flex items-start gap-2">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                   {statement.reasoning}
