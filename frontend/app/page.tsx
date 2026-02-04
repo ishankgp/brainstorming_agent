@@ -14,13 +14,13 @@ import {
   DEFAULT_FORMATS,
   DEFAULT_DIAGNOSTIC_RULES,
   SAMPLE_RESEARCH_DOCUMENTS,
-  SAMPLE_BRIEF,
 } from "@/lib/mock-data"
 import type {
   GenerationResult,
   ChallengeFormat,
   DiagnosticRule,
   ResearchDocument,
+  ChallengeStatement,
 } from "@/lib/types"
 
 type AppState = "idle" | "loading" | "success" | "error"
@@ -110,6 +110,7 @@ export default function BrainstormAgent() {
     setLastIncludeResearch(includeResearch)
     setAppState("loading")
     setError(null)
+    setResult(null) // Clear previous result
     console.log("🚀 Starting generation request...")
 
     try {
@@ -145,8 +146,6 @@ export default function BrainstormAgent() {
         timeoutRef.current = null
       }
 
-      console.log(`📥 Response status: ${response.status}`)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error("❌ API Error:", errorData)
@@ -155,18 +154,77 @@ export default function BrainstormAgent() {
         )
       }
 
-      const data = await response.json()
-      console.log("✅ Data received:", data)
-
-      // 4. Update state with transformed results
-      const result = {
-        challenge_statements: data.challenge_statements,
-        diagnostic_summary: data.diagnostic_summary,
-        diagnostic_path: data.diagnostic_path
+      if (!response.body) {
+        throw new Error("Response body is empty")
       }
 
-      setResult(result)
-      setAppState("success")
+      // 4. Handle Streaming Response
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      // Initialize result shell so we can start populating
+      let currentResult: GenerationResult = {
+        challenge_statements: [],
+        diagnostic_summary: "",
+        diagnostic_path: []
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        // Split by double newline (SSE standard separator for events)
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() || "" // Keep incomplete part
+
+        for (const part of parts) {
+          if (part.startsWith('data: ')) {
+            const jsonStr = part.slice(6).trim()
+            if (!jsonStr) continue
+
+            try {
+              const event = JSON.parse(jsonStr)
+              console.log("📨 Stream event:", event.type)
+
+              if (event.type === 'diagnostic') {
+                // Diagnostic complete - show streaming UI immediately
+                currentResult = {
+                  ...currentResult,
+                  diagnostic_summary: event.data.diagnostic_summary,
+                  diagnostic_path: event.data.diagnostic_path
+                }
+                setResult({ ...currentResult })
+                setAppState("success") // Switch to success view to show partial results
+              }
+              else if (event.type === 'challenge_result') {
+                // New statement arrived
+                const newStatement = event.data as ChallengeStatement
+
+                // Add to list and sort by position/id
+                const newStatements = [...currentResult.challenge_statements, newStatement]
+                  .sort((a, b) => a.id - b.id)
+
+                currentResult = {
+                  ...currentResult,
+                  challenge_statements: newStatements
+                }
+                setResult({ ...currentResult }) // Force re-render
+              }
+              else if (event.type === 'error') {
+                throw new Error(event.message)
+              }
+              else if (event.type === 'complete') {
+                console.log("✅ Stream complete")
+              }
+            } catch (e) {
+              console.error("Error parsing stream chunk", e)
+            }
+          }
+        }
+      }
+
     } catch (err) {
       // Ensure timeout is cleared on error too
       if (timeoutRef.current) {
@@ -255,6 +313,8 @@ export default function BrainstormAgent() {
             result={result}
             formats={formats}
             onReset={handleReset}
+            briefText={briefText}
+            includeResearch={lastIncludeResearch}
           />
         )}
       </main>

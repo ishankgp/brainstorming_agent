@@ -62,6 +62,7 @@ export interface EvaluationResult {
   failed_non_negotiables: string[]
   recommendation: "proceed" | "revise" | "reject"
   research_references?: ResearchReference[]
+  detected_format_id?: string
 }
 
 // Research Library Types

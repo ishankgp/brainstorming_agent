@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ChevronDown,
   ChevronUp,
@@ -21,17 +21,43 @@ interface ResultsSectionProps {
   result: GenerationResult
   formats: ChallengeFormat[]
   onReset: () => void
+  briefText: string
+  includeResearch: boolean
 }
 
 export function ResultsSection({
   result,
   formats,
   onReset,
+  briefText,
+  includeResearch,
 }: ResultsSectionProps) {
   const [showDiagnostic, setShowDiagnostic] = useState(false)
+  const [localResult, setLocalResult] = useState<GenerationResult>(result)
+
+  // Sync with streaming updates from parent
+  useEffect(() => {
+    setLocalResult(result)
+  }, [result])
+
+  const handleUpdateStatement = (statementId: number, newText: string, newEvaluation: any) => {
+    setLocalResult((prev) => ({
+      ...prev,
+      challenge_statements: prev.challenge_statements.map((stmt) =>
+        stmt.id === statementId
+          ? {
+            ...stmt,
+            text: newText,
+            evaluation: newEvaluation,
+            selected_format: newEvaluation?.detected_format_id || stmt.selected_format
+          }
+          : stmt
+      ),
+    }))
+  }
 
   // Calculate overall evaluation stats
-  const evalStats = result.challenge_statements.reduce(
+  const evalStats = localResult.challenge_statements.reduce(
     (acc, stmt) => {
       if (stmt.evaluation) {
         if (stmt.evaluation.recommendation === "proceed") acc.proceed++
@@ -51,7 +77,7 @@ export function ResultsSection({
             Challenge Statements
           </h2>
           <p className="text-base text-muted-foreground font-light max-w-xl">
-            {result.challenge_statements.length} statements generated from your brief
+            {localResult.challenge_statements.length} statements generated from your brief
           </p>
         </div>
 
@@ -126,13 +152,13 @@ export function ResultsSection({
         >
           <div className="border-t border-border p-4 space-y-4">
             {/* Diagnostic Path Steps */}
-            {result.diagnostic_path && result.diagnostic_path.length > 0 && (
+            {localResult.diagnostic_path && localResult.diagnostic_path.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Decision Tree Path
                 </p>
                 <div className="space-y-2">
-                  {result.diagnostic_path.map((step, idx) => (
+                  {localResult.diagnostic_path.map((step, idx) => (
                     <div
                       key={idx}
                       className="flex items-start gap-3 rounded-lg bg-muted/50 p-3"
@@ -172,7 +198,7 @@ export function ResultsSection({
 
             {/* Summary */}
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
-              <p className="text-sm text-foreground">{result.diagnostic_summary}</p>
+              <p className="text-sm text-foreground">{localResult.diagnostic_summary}</p>
             </div>
 
             {/* Format Distribution */}
@@ -181,7 +207,7 @@ export function ResultsSection({
                 Selected Formats
               </p>
               <div className="flex flex-wrap gap-2">
-                {result.challenge_statements.map((stmt) => {
+                {localResult.challenge_statements.map((stmt) => {
                   const format =
                     formats.find((f) => f.id === stmt.selected_format) ||
                     DEFAULT_FORMATS.find((f) => f.id === stmt.selected_format)
@@ -217,12 +243,15 @@ export function ResultsSection({
 
       {/* Statement Cards */}
       <div className="space-y-7 mt-12">
-        {result.challenge_statements.map((statement, index) => (
+        {localResult.challenge_statements.map((statement, index) => (
           <StatementCard
             key={statement.id}
             statement={statement}
             index={index}
             formats={formats}
+            briefText={briefText}
+            includeResearch={includeResearch}
+            onUpdateStatement={handleUpdateStatement}
           />
         ))}
       </div>

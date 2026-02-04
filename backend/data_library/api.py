@@ -1,9 +1,11 @@
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Any, Dict
 import asyncio
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -14,7 +16,11 @@ from data_library.models import (
     ChallengeSession, ChallengeStatement, ChallengeEvaluation,
     DimensionScore, ResearchReference, ResearchDocument
 )
-from data_library.challenge_generator import generate_challenges
+from data_library.challenge_generator import (
+    generate_challenges_stream, 
+    evaluate_statement_with_ai,
+    rewrite_statement_with_ai
+)
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
@@ -37,6 +43,19 @@ class ChallengeRequest(BaseModel):
     brief_text: str
     include_research: bool = False
     selected_research_ids: Optional[List[str]] = None
+
+class DiagnosticsRequest(BaseModel):
+    brief_text: str
+
+class ReEvaluationRequest(BaseModel):
+    brief_text: str
+    statement_text: str
+    include_research: bool = False
+
+class RewriteRequest(BaseModel):
+    brief_text: str
+    statement_text: str
+    instruction: str = ""
 
 class DiagnosticPathStepResponse(BaseModel):
     question: str
@@ -63,6 +82,7 @@ class EvaluationResponse(BaseModel):
     failed_non_negotiables: List[str]
     recommendation: str
     research_references: Optional[List[ResearchReferenceResponse]] = None
+    detected_format_id: Optional[str] = "F01"
 
 class ChallengeStatementResponse(BaseModel):
     id: int
@@ -93,6 +113,9 @@ class ResearchDocumentResponse(BaseModel):
     uploaded_at: str
     size_kb: int
 
+class RewriteResponse(BaseModel):
+    text: str
+
 # ============================================================================
 # HEALTH CHECK
 # ============================================================================
@@ -106,157 +129,129 @@ async def health_check():
 # CHALLENGE GENERATION ENDPOINTS
 # ============================================================================
 
-@app.post("/api/generate-challenge-statements", response_model=ChallengeResponse)
+@app.post("/api/evaluate-single-statement", response_model=EvaluationResponse)
+async def evaluate_single_statement_endpoint(request: ReEvaluationRequest):
+    """Evaluate a single statement against the brief."""
+    result = await evaluate_statement_with_ai(
+        statement_text=request.statement_text,
+        brief_text=request.brief_text,
+        include_research=request.include_research
+    )
+    return result
+
+@app.post("/api/rewrite-statement", response_model=RewriteResponse)
+async def rewrite_statement_endpoint(request: RewriteRequest):
+    """Rewrite a statement using AI."""
+    new_text = await rewrite_statement_with_ai(
+        original_text=request.statement_text,
+        brief_text=request.brief_text,
+        instruction=request.instruction
+    )
+    return {"text": new_text}
+
+async def stream_and_save_generator(request: ChallengeRequest, session: ChallengeSession, db: Session):
+    """
+    Wraps the core generator to save results to DB while streaming to client.
+    """
+    try:
+        async for chunk_str in generate_challenges_stream(
+            brief_text=request.brief_text,
+            include_research=request.include_research,
+            selected_research_ids=request.selected_research_ids or []
+        ):
+            # 1. Parse chunk
+            chunk = json.loads(chunk_str)
+            
+            # 2. Update DB based on chunk type
+            if chunk["type"] == "diagnostic":
+                data = chunk["data"]
+                session.diagnostic_summary = data["diagnostic_summary"]
+                session.diagnostic_path = data["diagnostic_path"]
+                db.commit()
+                
+            elif chunk["type"] == "challenge_result":
+                stmt_data = chunk["data"]
+                
+                # Save statement
+                stmt = ChallengeStatement(
+                    session_id=session.id,
+                    text=stmt_data["text"],
+                    selected_format=stmt_data["selected_format"],
+                    reasoning=stmt_data["reasoning"],
+                    position=stmt_data["position"]
+                )
+                db.add(stmt)
+                db.flush()
+                
+                # Save evaluation
+                if "evaluation" in stmt_data and stmt_data["evaluation"]:
+                    eval_data = stmt_data["evaluation"]
+                    evaluation = ChallengeEvaluation(
+                        statement_id=stmt.id,
+                        total_score=eval_data["total_score"],
+                        weighted_score=eval_data["weighted_score"],
+                        passes_non_negotiables=eval_data["passes_non_negotiables"],
+                        failed_non_negotiables=eval_data["failed_non_negotiables"],
+                        recommendation=eval_data["recommendation"]
+                    )
+                    db.add(evaluation)
+                    db.flush()
+                    
+                    # Save scores
+                    for dim_data in eval_data["dimension_scores"]:
+                        dim_score = DimensionScore(
+                            evaluation_id=evaluation.id,
+                            dimension_id=dim_data["dimension_id"],
+                            score=dim_data["score"],
+                            notes=dim_data["notes"],
+                            has_red_flags=dim_data["has_red_flags"]
+                        )
+                        db.add(dim_score)
+                
+                db.commit() # Save this statement
+            
+            # 3. Yield to client (SSE format)
+            yield f"data: {chunk_str}\n\n"
+            
+        # Stream finished successfully
+        session.status = "completed"
+        db.commit()
+        yield f"data: {json.dumps({'type': 'complete', 'session_id': session.id})}\n\n"
+        
+    except Exception as e:
+        print(f"Stream Error: {e}")
+        session.status = "error"
+        session.error_message = str(e)
+        db.commit()
+        yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+@app.post("/api/generate-challenge-statements")
 async def generate_challenge_statements(
     request: ChallengeRequest,
     db: Session = Depends(get_db_session)
 ):
     """
-    Generate challenge statements from marketing brief.
+    Generate challenge statements from marketing brief (Streaming).
     """
     print(f"🔥 RECEIVED REQUEST: brief length={len(request.brief_text)}")
-    try:
-        # 1. Create session
-        session = ChallengeSession(
-            brief_text=request.brief_text,
-            include_research=request.include_research,
-            selected_research_ids=request.selected_research_ids,
-            status="generating"
-        )
-        db.add(session)
-        db.commit()
-        db.refresh(session)
-        
-        # 2. Generate challenges
-        print(f"📝 Starting challenge generation...")
-        import time
-        start_time = time.time()
-        
-        try:
-            result = await generate_challenges(
-                brief_text=request.brief_text,
-                include_research=request.include_research,
-                selected_research_ids=request.selected_research_ids or []
-            )
-            elapsed = time.time() - start_time
-            print(f"✅ Generation completed in {elapsed:.2f}s")
-        except Exception as gen_error:
-            print(f"❌ Generation failed: {gen_error}")
-            raise
-        
-        # 3. Save results to DB
-        session.diagnostic_summary = result["diagnostic_summary"]
-        session.diagnostic_path = result["diagnostic_path"]
-        session.status = "completed"
-        
-        for idx, stmt_data in enumerate(result["challenge_statements"]):
-            stmt = ChallengeStatement(
-                session_id=session.id,
-                text=stmt_data["text"],
-                selected_format=stmt_data["selected_format"],
-                reasoning=stmt_data["reasoning"],
-                position=idx + 1
-            )
-            db.add(stmt)
-            db.flush()  # Get statement ID
-            
-            # Save evaluation
-            if "evaluation" in stmt_data and stmt_data["evaluation"]:
-                eval_data = stmt_data["evaluation"]
-                evaluation = ChallengeEvaluation(
-                    statement_id=stmt.id,
-                    total_score=eval_data["total_score"],
-                    weighted_score=eval_data["weighted_score"],
-                    passes_non_negotiables=eval_data["passes_non_negotiables"],
-                    failed_non_negotiables=eval_data["failed_non_negotiables"],
-                    recommendation=eval_data["recommendation"]
-                )
-                db.add(evaluation)
-                db.flush()
-                
-                # Save dimension scores
-                for dim_data in eval_data["dimension_scores"]:
-                    dim_score = DimensionScore(
-                        evaluation_id=evaluation.id,
-                        dimension_id=dim_data["dimension_id"],
-                        score=dim_data["score"],
-                        notes=dim_data["notes"],
-                        has_red_flags=dim_data["has_red_flags"]
-                    )
-                    db.add(dim_score)
-                
-                # Save research references
-                if "research_references" in eval_data and eval_data["research_references"]:
-                    for ref_data in eval_data["research_references"]:
-                        ref = ResearchReference(
-                            evaluation_id=evaluation.id,
-                            document_id=ref_data["document_id"],
-                            document_name=ref_data["document_name"],
-                            relevant_insight=ref_data["relevant_insight"],
-                            relevance_score=ref_data["relevance_score"]
-                        )
-                        db.add(ref)
-        
-        db.commit()
-        db.refresh(session)
-        
-        # 4. Build response from saved data
-        statements_response = []
-        for stmt in sorted(session.challenge_statements, key=lambda x: x.position):
-            eval_response = None
-            if stmt.evaluation:
-                eval_obj = stmt.evaluation
-                eval_response = EvaluationResponse(
-                    dimension_scores=[
-                        DimensionScoreResponse(
-                            dimension_id=ds.dimension_id,
-                            score=ds.score,
-                            notes=ds.notes,
-                            has_red_flags=ds.has_red_flags
-                        )
-                        for ds in eval_obj.dimension_scores
-                    ],
-                    total_score=eval_obj.total_score,
-                    weighted_score=eval_obj.weighted_score,
-                    passes_non_negotiables=eval_obj.passes_non_negotiables,
-                    failed_non_negotiables=eval_obj.failed_non_negotiables or [],
-                    recommendation=eval_obj.recommendation,
-                    research_references=[
-                        ResearchReferenceResponse(
-                            document_id=ref.document_id,
-                            document_name=ref.document_name,
-                            relevant_insight=ref.relevant_insight,
-                            relevance_score=ref.relevance_score
-                        )
-                        for ref in eval_obj.research_references
-                    ] if eval_obj.research_references else None
-                )
-            
-            statements_response.append(
-                ChallengeStatementResponse(
-                    id=stmt.id,
-                    text=stmt.text,
-                    selected_format=stmt.selected_format,
-                    reasoning=stmt.reasoning,
-                    evaluation=eval_response
-                )
-            )
-        
-        return ChallengeResponse(
-            challenge_statements=statements_response,
-            diagnostic_summary=session.diagnostic_summary,
-            diagnostic_path=session.diagnostic_path or [],
-            session_id=session.id
-        )
-        
-    except Exception as e:
-        # Save error to session if it exists
-        if 'session' in locals() and session.id:
-            session.status = "error"
-            session.error_message = str(e)
-            db.commit()
-        
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+    
+    # 1. Create session
+    session = ChallengeSession(
+        brief_text=request.brief_text,
+        include_research=request.include_research,
+        selected_research_ids=request.selected_research_ids,
+        status="generating"
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    
+    print(f"📝 Starting streaming generation for session {session.id}...")
+    
+    return StreamingResponse(
+        stream_and_save_generator(request, session, db),
+        media_type="text/event-stream"
+    )
 
 # ============================================================================
 # SESSION HISTORY ENDPOINTS
@@ -320,7 +315,8 @@ def get_session(session_id: str, db: Session = Depends(get_db_session)):
                         relevance_score=ref.relevance_score
                     )
                     for ref in eval_obj.research_references
-                ] if eval_obj.research_references else None
+                ] if eval_obj.research_references else None,
+                detected_format_id="F01" # Default if not present in DB
             )
         
         statements_response.append(
@@ -413,15 +409,6 @@ def delete_research_document(doc_id: str, db: Session = Depends(get_db_session))
     db.commit()
     
     return {"status": "deleted"}
-
-# ============================================================================
-# HEALTH CHECK
-# ============================================================================
-
-@app.get("/health")
-def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "Challenge Statement Generator API"}
 
 @app.get("/")
 def root():
