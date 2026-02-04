@@ -154,7 +154,7 @@ export function BriefInput({
 
 Example: 
 Our cardiovascular therapy is launching in Q3 2025. Key competitors include CardioMax and HeartGuard, who currently hold 60% market share combined. Our primary objective is to establish thought leadership among cardiologists while addressing the unmet needs of patients with treatment-resistant hypertension..."
-          className="min-h-64 resize-none border-0 bg-transparent text-base font-light focus-visible:ring-0 px-6 py-6"
+          className="min-h-80 resize-none border-0 bg-transparent text-base font-light focus-visible:ring-0 px-6 py-6"
         />
 
         <div className="flex items-center justify-between border-t border-border/40 px-6 py-4">
