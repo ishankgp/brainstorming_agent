@@ -196,20 +196,22 @@
     @apply space-y-16;
   }
 
-  /* Enhance text rendering for minimalist aesthetic */
-  @supports (font-size-adjust: from-font) {
-    body {
-      font-size-adjust: from-font;
-    }
-  }
-
   /* Minimize visual noise */
   input:focus-visible,
   textarea:focus-visible {
     @apply ring-1 ring-offset-1;
   }
+}
 
-  /* Enhanced spacing for cards and sections */
+/* Enhance text rendering for minimalist aesthetic */
+@supports (font-size-adjust: from-font) {
+  body {
+    font-size-adjust: from-font;
+  }
+}
+
+/* Enhanced spacing utilities */
+@layer components {
   .space-relaxed {
     @apply space-y-10;
   }
