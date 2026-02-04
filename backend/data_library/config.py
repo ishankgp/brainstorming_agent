@@ -22,9 +22,11 @@ if not GEMINI_API_KEY:
 
 # Constants
 FILE_SEARCH_STORE_NAME = "pharma-brand-library"
-DB_PATH = Path("./data/agents_v2.db")
-SESSIONS_DB_PATH = Path("./data/sessions.db")
-DOCS_PATH = Path("./data/documents")
+# Resolve paths relative to this file to ensure consistency regardless of CWD
+BASE_DIR = Path(__file__).resolve().parent.parent
+DB_PATH = BASE_DIR / "data" / "agents_v2.db"
+SESSIONS_DB_PATH = BASE_DIR / "data" / "sessions.db"
+DOCS_PATH = BASE_DIR / "data" / "documents"
 
 # Ensure directories exist
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)

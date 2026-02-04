@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useState, useEffect, useRef } from "react"
 import { AlertCircle } from "lucide-react"
 import { Header } from "@/components/header"
+import { useAppStore } from "@/lib/store"
 import { BriefInput } from "@/components/brief-input"
 import { ResultsSection } from "@/components/results-section"
 import { LoadingSkeleton } from "@/components/loading-skeleton"
@@ -28,20 +29,30 @@ type AppState = "idle" | "loading" | "success" | "error"
 
 // Brainstorm Agent main component
 function BrainstormAgentContent() {
-  // Start with empty brief - users select from brand selector or paste their own
-  const [briefText, setBriefText] = useState("")
-  const [appState, setAppState] = useState<AppState>("idle")
-  const [result, setResult] = useState<GenerationResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Global Store State
+  const {
+    briefText, setBriefText,
+    appStatus, setAppStatus,
+    result, setResult,
+    error, setError,
+    selectedResearch, setSelectedResearch,
+    lastIncludeResearch, setLastIncludeResearch,
+    toggleResearch,
+    reset: resetStore
+  } = useAppStore()
+
+  // Alias for backward compatibility with existing code
+  const appState = appStatus
+  const setAppState = setAppStatus
+
+  // Local State (non-persistent UI state)
   const [isLibraryOpen, setIsLibraryOpen] = useState(false)
   const [formats, setFormats] = useState<ChallengeFormat[]>(DEFAULT_FORMATS)
   const [diagnosticRules, setDiagnosticRules] =
     useState<DiagnosticRule[]>(DEFAULT_DIAGNOSTIC_RULES)
 
-  // Research Library state
+  // Research Library (Fetched Data)
   const [researchDocuments, setResearchDocuments] = useState<ResearchDocument[]>([])
-  const [selectedResearch, setSelectedResearch] = useState<string[]>([])
-  const [lastIncludeResearch, setLastIncludeResearch] = useState<boolean>(false)
 
   // Load initial data on mount
   useEffect(() => {
@@ -92,11 +103,7 @@ function BrainstormAgentContent() {
 
   // Research library handlers
   const handleToggleResearch = (docId: string) => {
-    setSelectedResearch((prev) =>
-      prev.includes(docId)
-        ? prev.filter((id) => id !== docId)
-        : [...prev, docId]
-    )
+    toggleResearch(docId)
   }
 
   const handleSelectAllResearch = () => {
@@ -113,7 +120,8 @@ function BrainstormAgentContent() {
 
   const handleRemoveResearchDocument = (docId: string) => {
     setResearchDocuments((prev) => prev.filter((d) => d.id !== docId))
-    setSelectedResearch((prev) => prev.filter((id) => id !== docId))
+    const newSelected = selectedResearch.filter((id) => id !== docId)
+    setSelectedResearch(newSelected)
   }
 
   // Use a ref for the timeout to ensure it persists and handles weird closure issues
@@ -262,10 +270,7 @@ function BrainstormAgentContent() {
   }
 
   const handleReset = () => {
-    setBriefText("")
-    setResult(null)
-    setAppState("idle")
-    setError(null)
+    resetStore()
   }
 
   const handleRetry = () => {
