@@ -17,27 +17,27 @@ interface HeaderProps {
 
 export function Header({ onOpenLibrary }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/98 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm transition-all duration-200">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-sm">
             <Beaker className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Brainstorm Agent</h1>
-            <p className="text-xs text-muted-foreground">Pharma Marketing Challenge Generator</p>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-bold text-foreground tracking-tight">Brainstorm Agent</h1>
+            <p className="text-xs text-muted-foreground font-medium">Pharma Marketing Challenge Generator</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={onOpenLibrary}
-            className="gap-2 bg-transparent"
+            className="gap-2"
           >
             <BookOpen className="h-4 w-4" />
-            Format Library
+            <span className="hidden sm:inline">Format Library</span>
           </Button>
 
           {/* Discreet settings menu */}
@@ -46,7 +46,7 @@ export function Header({ onOpenLibrary }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9"
               >
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">More options</span>

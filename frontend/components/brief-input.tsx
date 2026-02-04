@@ -109,12 +109,12 @@ export function BriefInput({
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground">
+        <h2 className="text-3xl font-bold text-foreground tracking-tight">
           Generate Challenge Statements
         </h2>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-3 text-base text-muted-foreground font-medium">
           Select a brand and brief format, or paste your own marketing brief
         </p>
       </div>
@@ -124,9 +124,9 @@ export function BriefInput({
 
       <div
         className={cn(
-          "relative rounded-lg border-2 border-dashed transition-all duration-200",
-          isDragging ? "border-primary bg-primary/5" : "border-border bg-card",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+          "relative rounded-xl border-2 border-dashed transition-all duration-300",
+          isDragging ? "border-primary bg-primary/8 shadow-md" : "border-border/60 bg-card/50",
+          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 hover:border-border/80"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -186,14 +186,14 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
       </div>
 
       {/* Research Library Section */}
-      <div className="rounded-lg border border-border bg-card">
-        <div className="flex w-full items-center justify-between p-4">
+      <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm hover:border-border/70 transition-all duration-200">
+        <div className="flex w-full items-center justify-between p-5">
           <div
-            className="flex flex-1 items-center gap-3 cursor-pointer transition-colors hover:opacity-80"
+            className="flex flex-1 items-center gap-4 cursor-pointer transition-colors hover:opacity-80"
             onClick={() => setShowResearch(!showResearch)}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <BookOpen className="h-4 w-4 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 shadow-sm">
+              <BookOpen className="h-4 w-4 text-primary font-medium" />
             </div>
             <div>
               <p className="font-medium text-foreground">Research Library</p>
@@ -265,9 +265,9 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
         onClick={() => onGenerate(includeResearch && selectedResearch.length > 0)}
         disabled={!canGenerate || isLoading}
         size="lg"
-        className="w-full gap-2 text-base"
+        className="w-full gap-2 text-base font-semibold shadow-md hover:shadow-lg"
       >
-        <Sparkles className="h-5 w-5" />
+        <Sparkles className={isLoading ? "h-5 w-5 animate-spin" : "h-5 w-5"} />
         {isLoading ? "Analyzing Brief..." : "Generate Challenge Statements"}
       </Button>
 

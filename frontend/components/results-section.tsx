@@ -44,13 +44,13 @@ export function ResultsSection({
   )
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="w-full space-y-8">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground">
+          <h2 className="text-3xl font-bold text-foreground tracking-tight">
             Challenge Statements
           </h2>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-2 text-base text-muted-foreground font-medium">
             {result.challenge_statements.length} statements generated from your
             brief
           </p>
@@ -59,7 +59,7 @@ export function ResultsSection({
         <Button
           variant="outline"
           onClick={onReset}
-          className="gap-2 bg-transparent"
+          className="gap-2 w-full sm:w-auto"
         >
           <RotateCcw className="h-4 w-4" />
           New Brief
@@ -68,24 +68,24 @@ export function ResultsSection({
 
       {/* Evaluation Summary */}
       <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          <span className="text-sm font-medium text-emerald-700">
+        <div className="flex items-center gap-3 rounded-lg border border-emerald-200/50 bg-emerald-50/60 px-4 py-3 shadow-sm">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold text-emerald-700">
             {evalStats.proceed} Proceed
           </span>
         </div>
         {evalStats.revise > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200/50 bg-amber-50/60 px-4 py-3 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="text-sm font-medium text-amber-700">
+            <span className="text-sm font-semibold text-amber-700">
               {evalStats.revise} Revise
             </span>
           </div>
         )}
         {evalStats.reject > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-            <XCircle className="h-4 w-4 text-red-600" />
-            <span className="text-sm font-medium text-red-700">
+          <div className="flex items-center gap-3 rounded-lg border border-red-200/50 bg-red-50/60 px-4 py-3 shadow-sm">
+            <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <span className="text-sm font-semibold text-red-700">
               {evalStats.reject} Reject
             </span>
           </div>
@@ -93,18 +93,18 @@ export function ResultsSection({
       </div>
 
       {/* Diagnostic Summary Toggle */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm hover:border-border/70 transition-all duration-200">
         <button
           type="button"
           onClick={() => setShowDiagnostic(!showDiagnostic)}
-          className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted/50"
+          className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-muted/30"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-              <Brain className="h-4 w-4 text-accent" />
+          <div className="flex items-center gap-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 shadow-sm">
+              <Brain className="h-4 w-4 text-accent font-medium" />
             </div>
             <div>
-              <p className="font-medium text-foreground">
+              <p className="font-semibold text-foreground">
                 Diagnostic Decision Path
               </p>
               <p className="text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ export function ResultsSection({
       </div>
 
       {/* Statement Cards */}
-      <div className="space-y-4">
+      <div className="space-y-5 mt-8">
         {result.challenge_statements.map((statement, index) => (
           <StatementCard
             key={statement.id}
