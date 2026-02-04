@@ -169,7 +169,9 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
             />
             <label
               htmlFor="file-upload"
-              className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground"
+              id="file-upload-label"
+              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              suppressHydrationWarning
             >
               <Upload className="h-4 w-4" />
               Upload file
