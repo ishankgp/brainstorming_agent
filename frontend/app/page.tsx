@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState, useEffect, useRef } from "react"
 import { AlertCircle } from "lucide-react"
 import { Header } from "@/components/header"
@@ -26,7 +27,7 @@ import type {
 type AppState = "idle" | "loading" | "success" | "error"
 
 // Brainstorm Agent main component
-export default function BrainstormAgent() {
+function BrainstormAgentContent() {
   // Start with empty brief - users select from brand selector or paste their own
   const [briefText, setBriefText] = useState("")
   const [appState, setAppState] = useState<AppState>("idle")
@@ -331,3 +332,7 @@ export default function BrainstormAgent() {
     </div>
   )
 }
+
+
+const BrainstormAgent = dynamic(() => Promise.resolve(BrainstormAgentContent), { ssr: false })
+export default BrainstormAgent

@@ -32,7 +32,7 @@ def get_client():
 # Model configuration
 # Model configuration
 # Using stable gemini-1.5-pro for reasoning tasks
-GEMINI_PRO_MODEL = "gemini-1.5-pro" 
+GEMINI_PRO_MODEL = "gemini-3-pro-preview" 
 
 # ============================================================================
 # STRUCTURED OUTPUT SCHEMA FOR DIAGNOSTIC ANALYSIS
@@ -373,7 +373,7 @@ Be specific and cite evidence from the brief in your reasoning."""
 
     try:
         response = get_client().models.generate_content(
-            model=GEMINI_3_PRO_MODEL,
+            model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -452,7 +452,7 @@ Return JSON:
 
     try:
         response = get_client().models.generate_content(
-            model=GEMINI_3_PRO_MODEL,
+            model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.7,
@@ -538,7 +538,7 @@ Return ONLY valid JSON (no markdown):
     
     try:
         response = get_client().models.generate_content(
-            model=GEMINI_3_PRO_MODEL,
+            model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.3,
@@ -600,7 +600,7 @@ async def rewrite_statement_with_ai(
     
     try:
         response = get_client().models.generate_content(
-            model=GEMINI_3_PRO_MODEL,
+            model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.7,

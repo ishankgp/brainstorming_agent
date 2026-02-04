@@ -160,56 +160,66 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
             selected_research_ids=request.selected_research_ids or []
         ):
             # 1. Parse chunk
-            chunk = json.loads(chunk_str)
+            try:
+                chunk = json.loads(chunk_str)
+            except json.JSONDecodeError:
+                print(f"Skipping invalid JSON chunk: {chunk_str[:50]}...")
+                continue
             
             # 2. Update DB based on chunk type
-            if chunk["type"] == "diagnostic":
-                data = chunk["data"]
-                session.diagnostic_summary = data["diagnostic_summary"]
-                session.diagnostic_path = data["diagnostic_path"]
-                db.commit()
-                
-            elif chunk["type"] == "challenge_result":
-                stmt_data = chunk["data"]
-                
-                # Save statement
-                stmt = ChallengeStatement(
-                    session_id=session.id,
-                    text=stmt_data["text"],
-                    selected_format=stmt_data["selected_format"],
-                    reasoning=stmt_data["reasoning"],
-                    position=stmt_data["position"]
-                )
-                db.add(stmt)
-                db.flush()
-                
-                # Save evaluation
-                if "evaluation" in stmt_data and stmt_data["evaluation"]:
-                    eval_data = stmt_data["evaluation"]
-                    evaluation = ChallengeEvaluation(
-                        statement_id=stmt.id,
-                        total_score=eval_data["total_score"],
-                        weighted_score=eval_data["weighted_score"],
-                        passes_non_negotiables=eval_data["passes_non_negotiables"],
-                        failed_non_negotiables=eval_data["failed_non_negotiables"],
-                        recommendation=eval_data["recommendation"],
-                        detected_format_id=eval_data.get("detected_format_id")
+            try:
+                if chunk["type"] == "diagnostic":
+                    data = chunk["data"]
+                    session.diagnostic_summary = data["diagnostic_summary"]
+                    session.diagnostic_path = data["diagnostic_path"]
+                    db.commit()
+                    
+                elif chunk["type"] == "challenge_result":
+                    stmt_data = chunk["data"]
+                    
+                    # Save statement
+                    stmt = ChallengeStatement(
+                        session_id=session.id,
+                        text=stmt_data["text"],
+                        selected_format=stmt_data["selected_format"],
+                        reasoning=stmt_data["reasoning"],
+                        position=stmt_data["position"]
                     )
-                    db.add(evaluation)
+                    db.add(stmt)
                     db.flush()
                     
-                    # Save scores
-                    for dim_data in eval_data["dimension_scores"]:
-                        dim_score = DimensionScore(
-                            evaluation_id=evaluation.id,
-                            dimension_id=dim_data["dimension_id"],
-                            score=dim_data["score"],
-                            notes=dim_data["notes"],
-                            has_red_flags=dim_data["has_red_flags"]
+                    # Save evaluation
+                    if "evaluation" in stmt_data and stmt_data["evaluation"]:
+                        eval_data = stmt_data["evaluation"]
+                        evaluation = ChallengeEvaluation(
+                            statement_id=stmt.id,
+                            total_score=eval_data["total_score"],
+                            weighted_score=eval_data["weighted_score"],
+                            passes_non_negotiables=eval_data["passes_non_negotiables"],
+                            failed_non_negotiables=eval_data["failed_non_negotiables"],
+                            recommendation=eval_data["recommendation"],
+                            detected_format_id=eval_data.get("detected_format_id")
                         )
-                        db.add(dim_score)
-                
-                db.commit() # Save this statement
+                        db.add(evaluation)
+                        db.flush()
+                        
+                        # Save scores
+                        for dim_data in eval_data["dimension_scores"]:
+                            dim_score = DimensionScore(
+                                evaluation_id=evaluation.id,
+                                dimension_id=dim_data["dimension_id"],
+                                score=dim_data["score"],
+                                notes=dim_data["notes"],
+                                has_red_flags=dim_data["has_red_flags"]
+                            )
+                            db.add(dim_score)
+                    
+                    db.commit() # Save this statement
+            except Exception as db_err:
+                print(f"DB Error saving chunk: {db_err}")
+                db.rollback()
+                # Continue streaming even if save fails, but user should probably know? 
+                # For now, just logging keeps the stream alive.
             
             # 3. Yield to client (SSE format)
             yield f"data: {chunk_str}\n\n"
