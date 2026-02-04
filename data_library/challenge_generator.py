@@ -17,7 +17,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Lazy client initialization to avoid blocking on module import
+_client = None
+
+def get_client():
+    """Get or create Gemini client (lazy initialization)."""
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=GEMINI_API_KEY)
+    return _client
 
 # Model configuration
 GEMINI_PRO_MODEL = "gemini-2.0-flash"  # Stable production model
@@ -426,7 +434,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }}"""
     
     try:
-        response = client.models.generate_content(
+        response = get_client().models.generate_content(
             model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -512,7 +520,7 @@ Return ONLY valid JSON (no markdown):
 }}"""
     
     try:
-        response = client.models.generate_content(
+        response = get_client().models.generate_content(
             model=GEMINI_PRO_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(

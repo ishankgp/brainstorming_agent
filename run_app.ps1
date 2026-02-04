@@ -1,6 +1,11 @@
 
 # Agentic Data Library - Start Script
 
+# 0. Kill ALL Python processes to ensure clean start
+Write-Host "Cleaning up all Python processes..." -ForegroundColor Yellow
+Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
 # 1. Clear Port 8000 (Backend)
 $backendPort = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
 if ($backendPort) {
@@ -21,7 +26,7 @@ if ($frontendPort) {
 
 # 3. Start Backend in a new window
 Write-Host "🚀 Launching Backend API..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Backend ---' -ForegroundColor Cyan; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000 --reload"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host '--- Challenge Generator Backend ---' -ForegroundColor Cyan; ./venv/Scripts/python -m uvicorn data_library.api:app --host 0.0.0.0 --port 8000"
 
 # 4. Start Frontend in a new window
 Write-Host "🎨 Launching Frontend (Next.js)..." -ForegroundColor Green
