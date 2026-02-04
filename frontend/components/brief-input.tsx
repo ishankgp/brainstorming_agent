@@ -255,7 +255,7 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
 
       {/* Include research indicator */}
       {includeResearch && selectedResearch.length > 0 && (
-        <div className="flex items-center gap-3 rounded-lg bg-primary/6 border border-primary/25 px-5 py-4">
+        <div className="flex items-center gap-3 rounded-lg bg-primary/5 border border-primary/25 px-5 py-4">
           <FolderOpen className="h-4 w-4 text-primary/70 shrink-0" />
           <span className="text-sm text-foreground/80 font-light">
             {selectedResearch.length} research document{selectedResearch.length !== 1 ? "s" : ""} will be used to inform challenge statement generation and evaluation
