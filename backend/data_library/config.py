@@ -22,7 +22,7 @@ if not GEMINI_API_KEY:
 
 # Constants
 FILE_SEARCH_STORE_NAME = "pharma-brand-library"
-DB_PATH = Path("./data/agents.db")
+DB_PATH = Path("./data/agents_v2.db")
 SESSIONS_DB_PATH = Path("./data/sessions.db")
 DOCS_PATH = Path("./data/documents")
 

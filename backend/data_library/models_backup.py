@@ -101,7 +101,6 @@ class ChallengeSession(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     status = Column(String, default="draft")  # draft, generating, completed, error
     error_message = Column(Text, nullable=True)
-    timing_metrics = Column(JSON, nullable=True)  # { "total": 12.5, "diagnostic": 2.1, ... }
     
     # Relationships
     challenge_statements = relationship("ChallengeStatement", back_populates="session", cascade="all, delete-orphan")

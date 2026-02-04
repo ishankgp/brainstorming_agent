@@ -1,6 +1,6 @@
 "use client"
 
-import { Beaker, BookOpen, MoreVertical, FileText, Info } from "lucide-react"
+import { Beaker, BookOpen, MoreVertical, FileText, Info, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -63,6 +63,12 @@ export function Header({ onOpenLibrary }: HeaderProps) {
                 <Link href="/user-stories" className="flex items-center gap-3 cursor-pointer">
                   <FileText className="h-4 w-4" />
                   User Stories
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/monitoring" className="flex items-center gap-3 cursor-pointer">
+                  <Activity className="h-4 w-4" />
+                  Performance Monitor
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

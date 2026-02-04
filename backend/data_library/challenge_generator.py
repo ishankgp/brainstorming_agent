@@ -207,6 +207,8 @@ async def generate_challenges_stream(
     logger.info(f"Generating challenges (stream) for brief length: {len(brief_text)}")
 
     # Prepare Research Files (Long Context)
+    # Step 0: Retrieval Context Setup
+    retrieval_start = time.time()
     research_files = []
     if research_docs:
         import mimetypes
@@ -228,6 +230,8 @@ async def generate_challenges_stream(
                     logger.info(f"Added context: {doc.get('name')} ({mime_type})")
                 except Exception as e:
                     logger.error(f"Failed to create part for {doc.get('name')}: {e}")
+    retrieval_duration = time.time() - retrieval_start
+
 
     # Step 1: Run Diagnostic
     start_time = time.time()
@@ -245,7 +249,8 @@ async def generate_challenges_stream(
         }
     })
     
-    logger.info(f"Diagnostic yielded after {time.time() - start_time:.2f}s")
+    diagnostic_duration = time.time() - start_time
+    logger.info(f"Diagnostic yielded after {diagnostic_duration:.2f}s")
     
     # Step 2: Parallel Generation & Evaluation
     # Create tasks for each format to run concurrently
@@ -277,6 +282,18 @@ async def generate_challenges_stream(
             logger.error(f"Task failed: {e}")
             # Yield error placeholder if needed, or just log
             # For now we'll rely on the task to return a fallback object on failure
+
+    # Final Timing Metrics
+    total_duration = time.time() - start_time
+    
+    yield json.dumps({
+        "type": "timing_metrics",
+        "data": {
+            "total_latency_ms": int((total_duration + retrieval_duration) * 1000),
+            "diagnostic_ms": int(diagnostic_duration * 1000),
+            "retrieval_ms": int(retrieval_duration * 1000),
+        }
+    })
 
 async def process_single_challenge_task(
     idx: int,

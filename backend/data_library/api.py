@@ -103,6 +103,8 @@ class SessionSummary(BaseModel):
     created_at: str
     status: str
     statement_count: int
+    timing_metrics: Optional[Dict] = None
+
 
 class ResearchDocumentResponse(BaseModel):
     id: str
@@ -224,7 +226,15 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
                             )
                             db.add(dim_score)
                     
-                    db.commit() # Save this statement
+                            db.add(dim_score)
+                            
+                        # Save relationships
+                        db.commit()
+                        
+                elif chunk["type"] == "timing_metrics":
+                    session.timing_metrics = chunk["data"]
+                    db.commit()
+                    
             except Exception as db_err:
                 print(f"DB Error saving chunk: {db_err}")
                 db.rollback()
@@ -295,7 +305,8 @@ def get_sessions(
             brief_preview=s.brief_text[:100] + "..." if len(s.brief_text) > 100 else s.brief_text,
             created_at=s.created_at.isoformat() if s.created_at else "",
             status=s.status,
-            statement_count=len(s.challenge_statements)
+            statement_count=len(s.challenge_statements),
+            timing_metrics=s.timing_metrics
         )
         for s in sessions
     ]
