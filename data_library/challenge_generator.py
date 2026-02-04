@@ -173,14 +173,32 @@ async def generate_challenges(
         research_ids=selected_research_ids
     )
     
-    # Step 4: Evaluate each statement
-    for idx, stmt in enumerate(challenge_statements):
-        logger.info(f"Evaluating statement {idx+1}/5...")
-        stmt["evaluation"] = await evaluate_statement_with_ai(
+    # Step 4: Evaluate each statement in parallel
+    logger.info("Evaluating all statements in parallel...")
+    evaluation_tasks = [
+        evaluate_statement_with_ai(
             statement_text=stmt["text"],
             brief_text=brief_text,
             include_research=include_research
         )
+        for stmt in challenge_statements
+    ]
+    
+    import asyncio
+    try:
+        evaluations = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        
+        for idx, eval_result in enumerate(evaluations):
+            if isinstance(eval_result, Exception):
+                logger.error(f"Evaluation failed for statement {idx+1}: {eval_result}")
+                challenge_statements[idx]["evaluation"] = create_default_evaluation()
+            else:
+                challenge_statements[idx]["evaluation"] = eval_result
+    except Exception as e:
+        logger.error(f"Critical error in parallel evaluations: {e}")
+        for stmt in challenge_statements:
+            if "evaluation" not in stmt:
+                stmt["evaluation"] = create_default_evaluation()
     
     # Step 5: Generate diagnostic summary
     diagnostic_summary = create_diagnostic_summary(diagnostic_path, selected_formats)

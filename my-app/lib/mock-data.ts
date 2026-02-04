@@ -9,6 +9,205 @@ import type {
   ResearchReference,
 } from "./types"
 
+// Pre-Launch Marketing Brief using structured format
+export const SAMPLE_BRIEF = `CLIENT MARKETING BRIEF
+(Pre-Creative / Pre-Agency Brief — Pre-Launch)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. BRAND STATUS
+
+Brand / Product Name: Velozia (enzalutinib)
+
+Lifecycle Stage: Pre-Launch (Approval expected: September 2026)
+
+Pre-Launch Details:
+• Indication under review: First-line treatment for adults with EGFR-mutated metastatic NSCLC
+• Expected label scope: Oral, once-daily targeted therapy with CNS penetration claims
+• Key regulatory milestones:
+  - FDA Advisory Committee: July 2026
+  - PDUFA date: September 2026
+  - EU filing: Q4 2026
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2. BACKGROUND & BUSINESS CONTEXT
+
+Category Context:
+• Tagrisso (osimertinib) dominates with 62% market share and $5.2B annual revenue
+• EGFR TKI category perceived as mature with established treatment paradigms
+• Brain metastases present in 25-40% of EGFR+ patients—a critical unmet need
+• Increasing payer scrutiny on high-cost oncology therapies
+• NCCN guidelines heavily favor Tagrisso as first-line standard
+
+Brand Context (Pre-Launch):
+• Intended role in therapy: Confident first-line alternative with superior CNS protection
+• Strategic reason for entering now:
+  - Phase 3 data shows 18.9 months PFS vs 10.2 months SOC
+  - CNS efficacy data is category-leading (24.3 months CNS-PFS)
+  - Better tolerability profile (28% Grade 3+ AEs vs 41% for competitors)
+  - Competitive pricing strategy (15% below Tagrisso)
+
+Why This Matters Now:
+• Launch window requires clear differentiation before being dismissed as "another TKI"
+• Tagrisso's 8-year head start means HCP habits are deeply entrenched
+• Must establish CNS protection story before competitors address this gap
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3. THE CORE BUSINESS PROBLEM
+
+Pre-Launch Framing:
+• How do we enter a market where Tagrisso is the reflexive first choice?
+• How do we make CNS protection a decision-driver, not a nice-to-have?
+• How do we establish credibility with oncologists who have no relationship with Meridian Biopharmaceuticals?
+• How do we avoid being positioned as "Tagrisso-lite" or a second-line fallback?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4. OBJECTIVES
+
+Primary Objective:
+• Establish a distinct, credible launch positioning centered on CNS protection
+• Drive early HCP consideration and formulary readiness
+
+Secondary Objectives:
+• Shape perception of Velozia as "the thinking oncologist's choice"
+• Equip 180 oncology specialists with a confident, focused launch story
+• Build advocacy network of 50+ KOLs before commercial availability
+• Achieve 8% market share by end of Year 1 ($420M revenue)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5. TARGET AUDIENCE
+
+Primary Audience:
+• Medical oncologists specializing in thoracic malignancies
+• High-volume community oncologists (12+ EGFR+ patients/month)
+• Academic oncologists at NCI-designated cancer centers
+
+Audience Nuance (Pre-Launch):
+• Education and mindset shaping required—many oncologists underestimate brain metastasis risk
+• Need to reach both early adopters AND thoughtful conservatives
+• Must prepare the market for a new option without creating confusion
+
+Secondary Audiences:
+• Pulmonologists involved in early-stage diagnosis
+• Oncology nurse navigators influencing treatment discussions
+• Hospital pharmacists managing formulary decisions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6. ANTICIPATED BRAND PERCEPTION (Pre-Launch)
+
+What we believe HCPs will assume about us at launch:
+• "Another EGFR TKI—what's the difference?"
+• "Probably works, but why switch from what I know?"
+• "Smaller company, less support infrastructure"
+• "CNS data sounds good, but Tagrisso works fine for my patients"
+
+Category stereotypes we risk inheriting:
+• New entrants are often seen as "me-too" until proven otherwise
+• Smaller companies perceived as less reliable for long-term support
+• Oral TKIs all blend together in crowded category
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+7. KEY INSIGHTS (Directional)
+
+Clinical Tensions:
+• Brain metastases remain the silent fear in EGFR+ NSCLC—progression often means cognitive decline
+• Many oncologists don't proactively discuss CNS risk until symptoms appear
+• Tolerability matters more than HCPs admit—dose modifications disrupt patient confidence
+
+Decision-Making Pressures:
+• Time-starved oncologists default to familiar agents
+• Guideline adherence is a safety net; deviation requires justification
+• Payer restrictions increasingly dictate first-line choices
+
+Unmet Needs Not Fully Addressed:
+• Proactive CNS protection is discussed but rarely acted upon
+• Patients want to "stay on therapy longer" without debilitating side effects
+• HCPs want confidence, not just data—reassurance that they're making the right call
+
+(Insights are hypotheses, not truths—agency validation expected.)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+8. POSITIONING (Status)
+
+Status: No formal positioning exists; agency to develop
+
+Positioning Considerations:
+• Intended role: Confident first-line alternative for oncologists who prioritize CNS protection
+• Degree of differentiation: Moderate-to-high, but must be credibility-first
+• Must balance clinical ambition with launch-appropriate restraint
+• Elements that must remain consistent: CNS efficacy story, tolerability advantage
+
+Working direction (not final):
+"For oncologists who refuse to wait for brain metastases to become a problem."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+9. MANDATORIES & GUARDRAILS
+
+Regulatory:
+• Approved indication language pending—first-line EGFR+ mNSCLC expected
+• CNS claims permitted based on secondary endpoint data
+• No direct comparative superiority claims vs. Tagrisso at launch
+
+Brand:
+• Meridian Biopharmaceuticals brand standards apply
+• Scientific, confident tone—avoid fear-based messaging
+• Visual identity in development; agency input welcome
+
+What to Avoid:
+• Over-promising efficacy before long-term data available
+• Fear-based brain metastasis messaging that alarms patients
+• Aggressive competitive positioning that invites backlash
+• Lifestyle or patient journey storytelling (HCP-focused campaign)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+10. DELIVERABLES (Pre-Launch)
+
+• Launch campaign territory and creative platform
+• Core visual and narrative system
+• Disease education framework (CNS risk in EGFR+ NSCLC)
+• Brand introduction materials for HCPs
+• Sales force training and message pull-through
+• Congress presence strategy (ASCO, ESMO)
+• Digital HCP engagement platform foundation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+11. TIMING & MILESTONES
+
+• Agency briefing: January 2026
+• Concept development: February-March 2026
+• Advisory board meetings with top 30 KOLs: May 2026
+• ASCO presentation of Phase 3 data: July 2026
+• Internal/legal review cycles: Ongoing
+• FDA approval (anticipated): September 2026
+• Launch week activities: September 2026
+• Payer contracting completion: Q4 2026
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+12. SUCCESS METRICS
+
+Pre-Launch:
+• Message clarity and recall in launch research (target: 70%+ unaided recall of CNS story)
+• Sales force readiness scores (target: 90% confident in core message delivery)
+• Early awareness among target oncologists (target: 65% aided awareness by launch)
+• KOL advocacy network (target: 50+ engaged advocates)
+
+Year 1 Post-Launch:
+• Market share: 8% by end of Year 1
+• New patient starts: Track monthly velocity
+• Formulary access: Tier 2 or better with 80% of commercial lives
+• NCCN Guideline inclusion: Category 1 recommendation`
+
 // ============================================
 // THE 12 "HOW CAN WE…" CHALLENGE FORMATS
 // ============================================
@@ -763,10 +962,10 @@ export const generateMockResult = (
     return {
       id: index + 1,
       text: generateChallengeText(formatId, lowerBrief),
-selected_format: formatId,
-  reasoning: generateReasoning(formatId, lowerBrief),
-  evaluation: generateMockEvaluation(includeResearch),
-  }
+      selected_format: formatId,
+      reasoning: generateReasoning(formatId, lowerBrief),
+      evaluation: generateMockEvaluation(includeResearch),
+    }
   })
 
   return {
