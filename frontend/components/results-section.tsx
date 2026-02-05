@@ -43,15 +43,7 @@ export function ResultsSection({
   const [localResult, setLocalResult] = useState<GenerationResult>(result)
   const resultsStartRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to results on initial load/activation
-  useEffect(() => {
-    if (status === "loading" || (result && result.challenge_statements.length > 0)) {
-      // Small delay to ensure render
-      setTimeout(() => {
-        resultsStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-      }, 100)
-    }
-  }, [status, result])
+  // Auto-scroll logic REMOVED for manual control preference
 
   // Sync with streaming updates from parent, but preserve local edits
   useEffect(() => {
@@ -214,7 +206,7 @@ export function ResultsSection({
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Decision Tree Path</p>
                   <div className="space-y-2">
                     {localResult.diagnostic_path.map((step, idx) => (
-                      <div key={idx} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+                      <div key={`${idx}-${step.question.substring(0, 5)}`} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
                         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{idx + 1}</div>
                         <div className="flex-1 space-y-1">
                           <p className="text-sm font-medium text-foreground">{step.question}</p>
@@ -251,7 +243,6 @@ export function ResultsSection({
         {status === "loading" && !isScanning && (
           <StatementLoadingCard
             index={localResult.challenge_statements.length}
-            logs={logs}
           />
         )}
       </div>

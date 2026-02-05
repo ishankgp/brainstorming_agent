@@ -50,7 +50,7 @@ export function AgentStatus({ logs, currentStep, status }: AgentStatusProps) {
                         <span className="text-muted-foreground opacity-50">Initializing...</span>
                     )}
                     {logs.map((log, i) => (
-                        <div key={i} className="flex gap-2 text-foreground/80">
+                        <div key={`${i}-${log.substring(0, 10)}`} className="flex gap-2 text-foreground/80">
                             <ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-primary/50" />
                             <span className={cn(
                                 "break-words leading-relaxed",

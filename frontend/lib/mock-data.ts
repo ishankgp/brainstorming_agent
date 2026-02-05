@@ -918,6 +918,7 @@ export const generateMockResult = (
     const format = DEFAULT_FORMATS.find((f) => f.id === formatId)!
     return {
       id: index + 1,
+      position: index + 1,
       text: generateChallengeText(formatId, lowerBrief),
       selected_format: formatId,
       reasoning: generateReasoning(formatId, lowerBrief),
