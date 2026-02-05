@@ -149,37 +149,20 @@ function BrainstormAgentContent() {
       <Header onOpenLibrary={() => setIsLibraryOpen(true)} />
 
       <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
-
-        {/* LIVE AGENT STATUS */}
-        <AgentStatus
-          logs={logs}
-          currentStep={currentStep}
-          status={status}
+        {/* Input Section - always visible, but scrolled past when generating */}
+        <BriefInput
+          value={briefText}
+          onChange={setBriefText}
+          onGenerate={handleGenerateWrapper}
+          isLoading={status === "loading"}
+          researchDocuments={researchDocuments}
+          selectedResearch={selectedResearch}
+          onToggleResearch={handleToggleResearch}
+          onSelectAllResearch={handleSelectAllResearch}
+          onClearAllResearch={handleClearAllResearch}
+          onAddResearchDocument={handleAddResearchDocument}
+          onRemoveResearchDocument={handleRemoveResearchDocument}
         />
-
-        {/* Input Section - Always visible when not in success state */}
-        {status !== "success" && status !== "loading" && (
-          <BriefInput
-            value={briefText}
-            onChange={setBriefText}
-            onGenerate={handleGenerateWrapper}
-            isLoading={status === "loading"}
-            researchDocuments={researchDocuments}
-            selectedResearch={selectedResearch}
-            onToggleResearch={handleToggleResearch}
-            onSelectAllResearch={handleSelectAllResearch}
-            onClearAllResearch={handleClearAllResearch}
-            onAddResearchDocument={handleAddResearchDocument}
-            onRemoveResearchDocument={handleRemoveResearchDocument}
-          />
-        )}
-
-        {/* Loading Skeleton (now mostly replaced by AgentStatus, but kept for layout structure underneath) */}
-        {status === "loading" && (
-          <div className="opacity-50 pointer-events-none filter blur-sm transition-all duration-500">
-            <LoadingSkeleton />
-          </div>
-        )}
 
         {/* Empty State */}
         {status === "idle" && !briefText && <EmptyState />}
@@ -203,14 +186,22 @@ function BrainstormAgentContent() {
           </div>
         )}
 
-        {/* Success State - Results */}
-        {(status === "success" || (result && result.challenge_statements.length > 0)) && result && (
+        {/* Success / Loading State - Results Area */}
+        {/* We render this IMMEDIATELY on loading to show the ScrollTarget and Agent Terminal */}
+        {(status === "loading" || status === "success" || (result && result.challenge_statements.length > 0)) && (
           <ResultsSection
-            result={result}
+            result={result || {
+              challenge_statements: [],
+              diagnostic_summary: "",
+              diagnostic_path: []
+            }}
             formats={formats}
             onReset={handleReset}
             briefText={briefText}
             includeResearch={lastIncludeResearch}
+            status={status}
+            currentStep={currentStep}
+            logs={logs}
           />
         )}
       </main>
@@ -224,7 +215,7 @@ function BrainstormAgentContent() {
         diagnosticRules={diagnosticRules}
         onUpdateRules={handleUpdateRules}
       />
-    </div>
+    </div >
   )
 }
 
