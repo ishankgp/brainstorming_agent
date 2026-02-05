@@ -33,6 +33,7 @@ def get_client():
 # Model configuration
 # Using stable gemini-1.5-pro for reasoning tasks
 GEMINI_PRO_MODEL = "gemini-3-pro-preview" 
+GEMINI_FLASH_MODEL = "gemini-2.0-flash" 
 
 # ============================================================================
 # STRUCTURED OUTPUT SCHEMA FOR DIAGNOSTIC ANALYSIS
@@ -502,7 +503,26 @@ Be specific and cite evidence from the brief in your reasoning."""
                     temperature=0.3
                 )
             )
+            )
         )
+    except Exception as e:
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            logger.warning(f"Rate limit hit for {model_name}, switching to {GEMINI_FLASH_MODEL}")
+            model_name = GEMINI_FLASH_MODEL
+            response = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: get_client().models.generate_content(
+                    model=GEMINI_FLASH_MODEL,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=get_diagnostic_schema(),
+                        temperature=0.3
+                    )
+                )
+            )
+        else:
+            raise e
         
         result = json.loads(response.text)
         
@@ -610,7 +630,24 @@ Return JSON:
                     response_mime_type="application/json"
                 )
             )
+            )
         )
+    except Exception as e:
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            logger.warning(f"Rate limit hit for {GEMINI_PRO_MODEL}, switching to {GEMINI_FLASH_MODEL}")
+            response = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: get_client().models.generate_content(
+                    model=GEMINI_FLASH_MODEL,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        response_mime_type="application/json"
+                    )
+                )
+            )
+        else:
+            raise e
         
         response_text = response.text.strip()
         if response_text.startswith("```"):
@@ -713,7 +750,25 @@ Return ONLY valid JSON (no markdown):
                     response_mime_type="application/json"
                 )
             )
+            )
         )
+    except Exception as e:
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            logger.warning(f"Rate limit hit for {model_name}, switching to {GEMINI_FLASH_MODEL}")
+            model_name = GEMINI_FLASH_MODEL # Update for metadata logging
+            response = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: get_client().models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        response_mime_type="application/json"
+                    )
+                )
+            )
+        else:
+            raise e
         
         response_text = response.text.strip()
         if response_text.startswith("```"):
