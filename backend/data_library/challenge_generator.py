@@ -308,6 +308,7 @@ async def process_single_challenge_task(
     Generates AND evaluates a single challenge statement.
     This runs in parallel for each format.
     """
+    gen_start = time.time()
     try:
         # A. Generate Statement
         statement_data = await generate_single_statement_with_ai(
@@ -316,13 +317,16 @@ async def process_single_challenge_task(
             reasoning=reasoning,
             research_files=research_files
         )
+        gen_duration = (time.time() - gen_start) * 1000
         
         # B. Evaluate Statement
+        eval_start = time.time()
         evaluation = await evaluate_statement_with_ai(
             statement_text=statement_data["text"],
             brief_text=brief_text,
             include_research=include_research
         )
+        eval_duration = (time.time() - eval_start) * 1000
         
         # Combine
         return {
@@ -331,7 +335,9 @@ async def process_single_challenge_task(
             "selected_format": format_id,
             "reasoning": reasoning,
             "evaluation": evaluation,
-            "position": idx
+            "position": idx,
+            "generation_time_ms": int(gen_duration),
+            "evaluation_time_ms": int(eval_duration)
         }
         
     except Exception as e:
@@ -343,7 +349,9 @@ async def process_single_challenge_task(
             "selected_format": format_id,
             "reasoning": reasoning,
             "evaluation": create_default_evaluation(),
-            "position": idx
+            "position": idx,
+            "generation_time_ms": int((time.time() - gen_start) * 1000),
+            "evaluation_time_ms": 0
         }
 
 # ============================================================================

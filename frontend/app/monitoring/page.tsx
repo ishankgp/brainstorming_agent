@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Fragment } from "react"
 import Link from "next/link"
-import { ArrowLeft, Clock, Server, Play, AlertCircle } from "lucide-react"
+import { ArrowLeft, Clock, Server, Play, ChevronDown, ChevronRight, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -14,6 +14,15 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+
+interface ChallengeTiming {
+    id: number
+    position: number
+    format: string
+    generation_time_ms?: number
+    evaluation_time_ms?: number
+}
 
 interface TimingMetrics {
     total_latency_ms: number
@@ -29,11 +38,13 @@ interface SessionSummary {
     status: string
     statement_count: number
     timing_metrics: TimingMetrics | null
+    challenges?: ChallengeTiming[]
 }
 
 export default function MonitoringPage() {
     const [sessions, setSessions] = useState<SessionSummary[]>([])
     const [loading, setLoading] = useState(true)
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         fetch("http://localhost:8000/api/sessions?limit=50")
@@ -47,6 +58,16 @@ export default function MonitoringPage() {
                 setLoading(false)
             })
     }, [])
+
+    const toggleRow = (id: string) => {
+        const newExpanded = new Set(expandedRows)
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id)
+        } else {
+            newExpanded.add(id)
+        }
+        setExpandedRows(newExpanded)
+    }
 
     const averageLatency = sessions.reduce((acc, s) => {
         const total = s.timing_metrics?.total_latency_ms || 0
@@ -64,7 +85,7 @@ export default function MonitoringPage() {
                         </Button>
                     </Link>
                     <div className="flex items-center gap-2">
-                        <ActivityIcon className="h-5 w-5 text-primary" />
+                        <Activity className="h-5 w-5 text-primary" />
                         <h1 className="text-lg font-semibold">System Performance Monitor</h1>
                     </div>
                 </div>
@@ -118,6 +139,7 @@ export default function MonitoringPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-[30px]"></TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Statements</TableHead>
@@ -129,39 +151,101 @@ export default function MonitoringPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {sessions.map((session) => (
-                                        <TableRow key={session.id}>
-                                            <TableCell className="font-mono text-xs">
-                                                {new Date(session.created_at).toLocaleString()}
-                                            </TableCell>
-                                            <TableCell>
-                                                <StatusBadge status={session.status} />
-                                            </TableCell>
-                                            <TableCell>
-                                                {session.statement_count}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {session.timing_metrics
-                                                    ? (session.timing_metrics.total_latency_ms / 1000).toFixed(2) + "s"
-                                                    : "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {session.timing_metrics
-                                                    ? (session.timing_metrics.diagnostic_ms / 1000).toFixed(2) + "s"
-                                                    : "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {session.timing_metrics
-                                                    ? (session.timing_metrics.retrieval_ms / 1000).toFixed(2) + "s"
-                                                    : "-"}
-                                            </TableCell>
-                                            <TableCell className="max-w-[300px] truncate text-muted-foreground text-xs">
-                                                {session.brief_preview}
-                                            </TableCell>
-                                        </TableRow>
+                                        <Fragment key={session.id}>
+                                            <TableRow
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() => toggleRow(session.id)}
+                                            >
+                                                <TableCell>
+                                                    {expandedRows.has(session.id) ? (
+                                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                    ) : (
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="font-mono text-xs">
+                                                    {new Date(session.created_at).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <StatusBadge status={session.status} />
+                                                </TableCell>
+                                                <TableCell>
+                                                    {session.statement_count}
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {session.timing_metrics
+                                                        ? (session.timing_metrics.total_latency_ms / 1000).toFixed(2) + "s"
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {session.timing_metrics
+                                                        ? (session.timing_metrics.diagnostic_ms / 1000).toFixed(2) + "s"
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {session.timing_metrics
+                                                        ? (session.timing_metrics.retrieval_ms / 1000).toFixed(2) + "s"
+                                                        : "-"}
+                                                </TableCell>
+                                                <TableCell className="max-w-[300px] truncate text-muted-foreground text-xs">
+                                                    {session.brief_preview}
+                                                </TableCell>
+                                            </TableRow>
+                                            {expandedRows.has(session.id) && session.challenges && (
+                                                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                                    <TableCell colSpan={8} className="p-4">
+                                                        <div className="rounded-md border bg-background p-4">
+                                                            <h4 className="mb-4 text-sm font-semibold">Challenge Generation Details</h4>
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead className="w-[100px]">Format</TableHead>
+                                                                        <TableHead>Generation (ms)</TableHead>
+                                                                        <TableHead>Evaluation (ms)</TableHead>
+                                                                        <TableHead>Total (ms)</TableHead>
+                                                                        <TableHead className="text-right">Timeline</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {session.challenges.map((challenge) => (
+                                                                        <TableRow key={challenge.id}>
+                                                                            <TableCell className="font-medium">{challenge.format}</TableCell>
+                                                                            <TableCell>
+                                                                                {challenge.generation_time_ms ? challenge.generation_time_ms : "-"}
+                                                                            </TableCell>
+                                                                            <TableCell>
+                                                                                {challenge.evaluation_time_ms ? challenge.evaluation_time_ms : "-"}
+                                                                            </TableCell>
+                                                                            <TableCell className="font-bold">
+                                                                                {(challenge.generation_time_ms || 0) + (challenge.evaluation_time_ms || 0)}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-right">
+                                                                                <div className="flex justify-end gap-1 h-2 w-full max-w-[200px] ml-auto">
+                                                                                    <div
+                                                                                        className="bg-blue-500 rounded-l-sm"
+                                                                                        style={{ width: `${((challenge.generation_time_ms || 0) / 3000) * 100}%` }}
+                                                                                        title={`Generation: ${challenge.generation_time_ms}ms`}
+                                                                                    />
+                                                                                    <div
+                                                                                        className="bg-green-500 rounded-r-sm"
+                                                                                        style={{ width: `${((challenge.evaluation_time_ms || 0) / 3000) * 100}%` }}
+                                                                                        title={`Evaluation: ${challenge.evaluation_time_ms}ms`}
+                                                                                    />
+                                                                                </div>
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </Fragment>
                                     ))}
                                     {sessions.length === 0 && !loading && (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
+                                            <TableCell colSpan={8} className="h-24 text-center">
                                                 No sessions recorded yet.
                                             </TableCell>
                                         </TableRow>
@@ -187,23 +271,4 @@ function StatusBadge({ status }: { status: string }) {
         return <Badge variant="secondary" className="animate-pulse">Generating</Badge>
     }
     return <Badge variant="secondary">{status}</Badge>
-}
-
-function ActivityIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-        </svg>
-    )
 }

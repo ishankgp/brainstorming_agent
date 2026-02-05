@@ -118,6 +118,10 @@ class ChallengeStatement(Base):
     selected_format = Column(String, nullable=False)  # "F01", "F02", etc.
     reasoning = Column(Text, nullable=False)
     
+    # Timing Metrics
+    generation_time_ms = Column(Integer, nullable=True)
+    evaluation_time_ms = Column(Integer, nullable=True)
+    
     # Display order
     position = Column(Integer, nullable=False)  # 1-5
     

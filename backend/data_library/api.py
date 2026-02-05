@@ -104,6 +104,7 @@ class SessionSummary(BaseModel):
     status: str
     statement_count: int
     timing_metrics: Optional[Dict] = None
+    challenges: Optional[List[Dict]] = None # [{id, format, gen_ms, eval_ms}]
 
 
 class ResearchDocumentResponse(BaseModel):
@@ -195,7 +196,9 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
                         text=stmt_data["text"],
                         selected_format=stmt_data["selected_format"],
                         reasoning=stmt_data["reasoning"],
-                        position=stmt_data["position"]
+                        position=stmt_data["position"],
+                        generation_time_ms=stmt_data.get("generation_time_ms"),
+                        evaluation_time_ms=stmt_data.get("evaluation_time_ms")
                     )
                     db.add(stmt)
                     db.flush()
@@ -306,7 +309,17 @@ def get_sessions(
             created_at=s.created_at.isoformat() if s.created_at else "",
             status=s.status,
             statement_count=len(s.challenge_statements),
-            timing_metrics=s.timing_metrics
+            timing_metrics=s.timing_metrics,
+            challenges=[
+                {
+                    "id": stmt.id,
+                    "position": stmt.position,
+                    "format": stmt.selected_format,
+                    "generation_time_ms": stmt.generation_time_ms,
+                    "evaluation_time_ms": stmt.evaluation_time_ms
+                }
+                for stmt in sorted(s.challenge_statements, key=lambda x: x.position)
+            ]
         )
         for s in sessions
     ]
