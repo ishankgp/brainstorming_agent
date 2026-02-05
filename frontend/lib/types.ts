@@ -1,6 +1,7 @@
 export interface ChallengeStatement {
   id: number
   text: string
+  position?: number
   selected_format: string
   reasoning: string
   evaluation?: EvaluationResult

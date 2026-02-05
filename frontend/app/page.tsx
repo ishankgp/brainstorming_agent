@@ -331,7 +331,7 @@ function BrainstormAgentContent() {
       <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
 
         {/* LIVE STATUS BANNER */}
-        {(appState === "loading" || (appState === "success" && result?.challenge_statements.length < 5)) && lastLogMessage && (
+        {(appState === "loading" || (appState === "success" && (result?.challenge_statements?.length || 0) < 5)) && lastLogMessage && (
           <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             <p className="font-mono text-sm">{lastLogMessage}</p>

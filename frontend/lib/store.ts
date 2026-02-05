@@ -12,12 +12,18 @@ interface AppState {
     error: string | null
     selectedResearch: string[]
     lastIncludeResearch: boolean
+    logs: string[]
+    currentStep: string
 
     // Actions
     setBriefText: (text: string) => void
     setAppStatus: (status: AppStatus) => void
     setResult: (result: GenerationResult | null) => void
     setError: (error: string | null) => void
+    setLogs: (logs: string[]) => void
+    addLog: (log: string) => void
+    setCurrentStep: (step: string) => void
+
     setSelectedResearch: (ids: string[]) => void
     setLastIncludeResearch: (include: boolean) => void
     toggleResearch: (id: string) => void
@@ -33,11 +39,16 @@ export const useAppStore = create<AppState>()(
             error: null,
             selectedResearch: [],
             lastIncludeResearch: false,
+            logs: [],
+            currentStep: "Idle",
 
             setBriefText: (text) => set({ briefText: text }),
             setAppStatus: (status) => set({ appStatus: status }),
             setResult: (result) => set({ result }),
             setError: (error) => set({ error }),
+            setLogs: (logs) => set({ logs }),
+            addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
+            setCurrentStep: (step) => set({ currentStep: step }),
 
             setSelectedResearch: (ids) => set({ selectedResearch: ids }),
             setLastIncludeResearch: (include) => set({ lastIncludeResearch: include }),
@@ -54,7 +65,9 @@ export const useAppStore = create<AppState>()(
                 result: null,
                 error: null,
                 selectedResearch: [],
-                lastIncludeResearch: false
+                lastIncludeResearch: false,
+                logs: [],
+                currentStep: "Idle"
             })
         }),
         {
