@@ -12,6 +12,8 @@ interface AppState {
     error: string | null
     selectedResearch: string[]
     lastIncludeResearch: boolean
+    logs: string[]
+    currentStep: string
 
     // Actions
     setBriefText: (text: string) => void
@@ -20,6 +22,9 @@ interface AppState {
     setError: (error: string | null) => void
     setSelectedResearch: (ids: string[]) => void
     setLastIncludeResearch: (include: boolean) => void
+    setLogs: (logs: string[]) => void
+    addLog: (message: string) => void
+    setCurrentStep: (step: string) => void
     toggleResearch: (id: string) => void
     reset: () => void
 }
@@ -33,11 +38,18 @@ export const useAppStore = create<AppState>()(
             error: null,
             selectedResearch: [],
             lastIncludeResearch: false,
+            logs: [],
+            currentStep: "Ready",
 
             setBriefText: (text) => set({ briefText: text }),
             setAppStatus: (status) => set({ appStatus: status }),
             setResult: (result) => set({ result }),
             setError: (error) => set({ error }),
+            setLogs: (logs) => set({ logs }),
+            addLog: (message) => set((state) => ({
+                logs: [...state.logs, `[${new Date().toLocaleTimeString()}] ${message}`]
+            })),
+            setCurrentStep: (step) => set({ currentStep: step }),
 
             setSelectedResearch: (ids) => set({ selectedResearch: ids }),
             setLastIncludeResearch: (include) => set({ lastIncludeResearch: include }),
@@ -54,7 +66,9 @@ export const useAppStore = create<AppState>()(
                 result: null,
                 error: null,
                 selectedResearch: [],
-                lastIncludeResearch: false
+                lastIncludeResearch: false,
+                logs: [],
+                currentStep: "Ready"
             })
         }),
         {
