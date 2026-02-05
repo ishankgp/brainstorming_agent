@@ -35,9 +35,6 @@ interface TimingMetrics {
     diagnostic_ms: number
     retrieval_ms: number
     generation_avg_ms?: number
-    diagnostic_input_tokens?: number
-    diagnostic_output_tokens?: number
-    diagnostic_model?: string
 }
 
 interface SessionSummary {
@@ -234,28 +231,6 @@ export default function MonitoringPage() {
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    <TableRow>
-                                                                        <TableCell className="font-medium text-purple-600">Diagnostic</TableCell>
-                                                                        <TableCell className="text-xs text-muted-foreground">{session.timing_metrics?.diagnostic_model || "-"}</TableCell>
-                                                                        <TableCell className="text-xs font-mono">
-                                                                            {session.timing_metrics?.diagnostic_input_tokens || 0} / {session.timing_metrics?.diagnostic_output_tokens || 0}
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            {session.timing_metrics?.diagnostic_ms ? (session.timing_metrics.diagnostic_ms / 1000).toFixed(2) + "s" : "-"}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-xs text-muted-foreground">-</TableCell>
-                                                                        <TableCell className="text-xs font-mono">-</TableCell>
-                                                                        <TableCell>-</TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            <div className="flex justify-end gap-1 h-2 w-full max-w-[200px] ml-auto">
-                                                                                <div
-                                                                                    className="bg-purple-500 rounded-sm"
-                                                                                    style={{ width: "100%" }}
-                                                                                    title={`Diagnostic: ${session.timing_metrics?.diagnostic_ms}ms`}
-                                                                                />
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
                                                                     {session.challenges.map((challenge) => (
                                                                         <TableRow key={challenge.id}>
                                                                             <TableCell className="font-medium">{challenge.format}</TableCell>
@@ -314,7 +289,7 @@ export default function MonitoringPage() {
                     </CardContent>
                 </Card>
             </main>
-        </div >
+        </div>
     )
 }
 

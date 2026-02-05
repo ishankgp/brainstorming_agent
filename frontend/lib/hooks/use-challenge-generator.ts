@@ -138,12 +138,9 @@ export function useChallengeGenerator(): UseChallengeGeneratorReturn {
                                     diagnostic_path: event.data.diagnostic_path
                                 }
                                 setResult({ ...currentResult })
-                                // REMOVED: setStatus("success") - We keep "loading" to show the agent working
+                                setStatus("success") // Switch to success UI to show progress
                             }
                             else if (event.type === 'challenge_generation') {
-                                // DELAY: Pacing for agentic feel (1.5s per card)
-                                await new Promise(resolve => setTimeout(resolve, 1500))
-
                                 const stmt = event.data as ChallengeStatement
                                 addLog(`Generated Statement #${stmt.position} (${stmt.selected_format})`)
 
@@ -167,7 +164,6 @@ export function useChallengeGenerator(): UseChallengeGeneratorReturn {
                             else if (event.type === 'complete') {
                                 addLog("All tasks completed successfully.")
                                 setCurrentStep("Complete")
-                                setStatus("success") // Triggers the final UI state (hides loading card)
                             }
                             else if (event.type === 'error') {
                                 throw new Error(event.message)
