@@ -60,7 +60,7 @@ class ChallengeRequest(BaseModel):
     brief_text: str
     include_research: bool = False
     selected_research_ids: Optional[List[str]] = None
-    model_config: Optional[ModelConfig] = None
+    generator_config: Optional[ModelConfig] = None
 
 class DiagnosticsRequest(BaseModel):
     brief_text: str
@@ -175,6 +175,9 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
     Wraps the core generator to save results to DB while streaming to client.
     """
     try:
+        # Extract model configuration
+        model_config = request.generator_config.dict() if request.generator_config else None
+
         # Fetch research docs for RAG context
         research_docs_data = []
         if request.include_research and request.selected_research_ids:

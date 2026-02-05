@@ -90,16 +90,25 @@ export default function MonitoringPage() {
         <div className="min-h-screen bg-muted/10">
             {/* Header */}
             <header className="border-b bg-background/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-8">
-                    <Link href="/">
-                        <Button variant="ghost" size="icon" className="h-9 w-9">
-                            <ArrowLeft className="h-4 w-4" />
+                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
+                    <div className="flex items-center gap-4">
+                        <Link href="/">
+                            <Button variant="ghost" size="icon" className="h-9 w-9">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <Activity className="h-5 w-5 text-primary" />
+                            <h1 className="text-xl font-semibold tracking-tight">System Performance Monitor</h1>
+                        </div>
+                    </div>
+
+                    <Link href="/monitoring/models">
+                        <Button variant="outline" size="sm" className="gap-2">
+                            <Server className="h-4 w-4" />
+                            Model Config
                         </Button>
                     </Link>
-                    <div className="flex items-center gap-2">
-                        <Activity className="h-5 w-5 text-primary" />
-                        <h1 className="text-lg font-semibold">System Performance Monitor</h1>
-                    </div>
                 </div>
             </header>
 

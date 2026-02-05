@@ -271,6 +271,10 @@ async def generate_challenges_stream(
                 "Selected by diagnostic"
             )
             
+            # Get models for this stage
+            gen_model = model_config.get("generation_model", GEMINI_PRO_MODEL) if model_config else GEMINI_PRO_MODEL
+            eval_model = model_config.get("evaluation_model", GEMINI_PRO_MODEL) if model_config else GEMINI_PRO_MODEL
+
             async for event in process_single_challenge_stream(
                 idx=idx+1,
                 format_id=fmt_id,
@@ -278,7 +282,9 @@ async def generate_challenges_stream(
                 include_research=include_research,
                 research_ids=selected_research_ids,
                 research_files=research_files,
-                reasoning=reasoning
+                reasoning=reasoning,
+                generation_model=gen_model,
+                evaluation_model=eval_model
             ):
                 await queue.put(json.dumps(event))
         except Exception as e:
@@ -327,7 +333,9 @@ async def process_single_challenge_stream(
     include_research: bool,
     research_ids: List[str],
     reasoning: str,
-    research_files: List[Any] = None
+    research_files: List[Any] = None,
+    generation_model: str = GEMINI_PRO_MODEL,
+    evaluation_model: str = GEMINI_PRO_MODEL
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Generates AND evaluates a single challenge statement, yielding results as they happen.
@@ -343,7 +351,8 @@ async def process_single_challenge_stream(
             brief_text=brief_text,
             format_id=format_id,
             reasoning=reasoning,
-            research_files=research_files
+            research_files=research_files,
+            model_name=generation_model
         )
         gen_duration = (time.time() - gen_start) * 1000
         
@@ -372,7 +381,8 @@ async def process_single_challenge_stream(
         evaluation = await evaluate_statement_with_ai(
             statement_text=statement_data["text"],
             brief_text=brief_text,
-            include_research=include_research
+            include_research=include_research,
+            model_name=evaluation_model
         )
         eval_duration = (time.time() - eval_start) * 1000
         
@@ -528,7 +538,8 @@ async def generate_single_statement_with_ai(
     brief_text: str,
     format_id: str,
     reasoning: str,
-    research_files: List[Any] = None
+    research_files: List[Any] = None,
+    model_name: str = GEMINI_PRO_MODEL
 ) -> Dict[str, Any]:
     """
     Generates a SINGLE challenge statement for a specific format, optionally utilizing research files.
@@ -615,7 +626,8 @@ Return JSON:
 async def evaluate_statement_with_ai(
     statement_text: str,
     brief_text: str,
-    include_research: bool
+    include_research: bool,
+    model_name: str = GEMINI_PRO_MODEL
 ) -> Dict[str, Any]:
     """
     Use Gemini to evaluate statement on 8 dimensions AND detect its format.
@@ -669,7 +681,7 @@ Return ONLY valid JSON (no markdown):
         response = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: get_client().models.generate_content(
-                model=GEMINI_PRO_MODEL,
+                model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.3,

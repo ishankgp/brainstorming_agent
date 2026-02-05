@@ -149,6 +149,19 @@ function BrainstormAgentContent() {
 
       // 2. Make API call
       console.log("📡 Sending POST to /api/generate-challenge-statements")
+
+      // Load model config from local storage
+      let modelConfig = null
+      try {
+        const savedConfig = localStorage.getItem("challenge_model_config")
+        if (savedConfig) {
+          modelConfig = JSON.parse(savedConfig)
+          console.log("⚙️ Using custom model config:", modelConfig)
+        }
+      } catch (e) {
+        console.warn("Failed to load model config", e)
+      }
+
       const response = await fetch('http://localhost:8000/api/generate-challenge-statements', {
         method: 'POST',
         headers: {
@@ -157,7 +170,8 @@ function BrainstormAgentContent() {
         body: JSON.stringify({
           brief_text: briefText,
           include_research: includeResearch,
-          selected_research_ids: includeResearch ? selectedResearch : null
+          selected_research_ids: includeResearch ? selectedResearch : null,
+          generator_config: modelConfig
         }),
         signal: controller.signal
       })
