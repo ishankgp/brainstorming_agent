@@ -132,6 +132,7 @@ function BrainstormAgentContent() {
     setAppState("loading")
     setError(null)
     setResult(null) // Clear previous result
+    setLastLogMessage("Initializing AI process...")
     console.log("🚀 Starting generation request...")
 
     try {
@@ -211,6 +212,7 @@ function BrainstormAgentContent() {
 
               if (event.type === 'diagnostic') {
                 // Diagnostic complete - show streaming UI immediately
+                setLastLogMessage("Diagnostic complete. Generating challenges...")
                 currentResult = {
                   ...currentResult,
                   diagnostic_summary: event.data.diagnostic_summary,
@@ -219,19 +221,46 @@ function BrainstormAgentContent() {
                 setResult({ ...currentResult })
                 setAppState("success") // Switch to success view to show partial results
               }
-              else if (event.type === 'challenge_result') {
-                // New statement arrived
+              else if (event.type === 'challenge_generation') {
+                // New statement arrived (without evaluation yet)
                 const newStatement = event.data as ChallengeStatement
+                setLastLogMessage(`Generated Format ${newStatement.selected_format}. Evaluating...`)
 
-                // Add to list and sort by position/id
-                const newStatements = [...currentResult.challenge_statements, newStatement]
-                  .sort((a, b) => a.id - b.id)
+                // Add to list and sort
+                // Check if it already exists (redundancy check)
+                const exists = currentResult.challenge_statements.find(s => s.id === newStatement.id)
+                if (!exists) {
+                  const newStatements = [...currentResult.challenge_statements, newStatement]
+                    .sort((a, b) => a.id - b.id)
+
+                  currentResult = {
+                    ...currentResult,
+                    challenge_statements: newStatements
+                  }
+                  setResult({ ...currentResult })
+                }
+              }
+              else if (event.type === 'challenge_evaluation') {
+                // Evaluation arrived - Update existing statement
+                const evalData = event.data as ChallengeStatement
+                setLastLogMessage(`Evaluated Format ${evalData.selected_format}.`)
+
+                const updatedStatements = currentResult.challenge_statements.map(s => {
+                  if (s.id === evalData.id) {
+                    return { ...s, ...evalData } // Merge evaluation data
+                  }
+                  return s
+                })
 
                 currentResult = {
                   ...currentResult,
-                  challenge_statements: newStatements
+                  challenge_statements: updatedStatements
                 }
-                setResult({ ...currentResult }) // Force re-render
+                setResult({ ...currentResult })
+              }
+              else if (event.type === 'challenge_result') {
+                // Deprecated but logic kept for compatibility just in case
+                // ...
               }
               else if (event.type === 'error') {
                 throw new Error(event.message)
@@ -278,11 +307,23 @@ function BrainstormAgentContent() {
     handleGenerate(lastIncludeResearch)
   }
 
+  // --- streaming log state ---
+  const [lastLogMessage, setLastLogMessage] = useState<string>("")
+
   return (
     <div className="min-h-screen bg-background">
       <Header onOpenLibrary={() => setIsLibraryOpen(true)} />
 
       <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
+
+        {/* LIVE STATUS BANNER */}
+        {(appState === "loading" || (appState === "success" && result?.challenge_statements.length < 5)) && lastLogMessage && (
+          <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <p className="font-mono text-sm">{lastLogMessage}</p>
+          </div>
+        )}
+
         {/* Input Section - Always visible when not in success state */}
         {appState !== "success" && (
           <BriefInput

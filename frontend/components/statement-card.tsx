@@ -243,6 +243,13 @@ export function StatementCard({
                       Edge Case Format
                     </Badge>
                   )}
+                  {/* Partial Result Loading State */}
+                  {!statement.evaluation && (
+                    <div className="flex items-center gap-2 text-xs font-medium text-blue-600 animate-pulse bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                      <Sparkles className="h-3 w-3 animate-spin text-blue-500" />
+                      <span>Evaluating...</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Quick evaluation summary */}

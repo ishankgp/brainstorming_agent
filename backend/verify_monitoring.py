@@ -28,6 +28,18 @@ def test_monitoring_endpoint():
                 print("SUCCESS: timing_metrics field present.")
             else:
                 print("FAILURE: timing_metrics missing.")
+
+            if "challenges" in first and len(first["challenges"]) > 0:
+                first_chal = first["challenges"][0]
+                if "gen_input_tokens" in first_chal:
+                    print(f"SUCCESS: Tokens captured (Gen Input: {first_chal.get('gen_input_tokens')})")
+                else:
+                    print("FAILURE: gen_input_tokens missing.")
+                
+                if "gen_model" in first_chal:
+                    print(f"SUCCESS: Model captured ({first_chal.get('gen_model')})")
+                else:
+                    print("FAILURE: gen_model missing.")
         else:
             print("No sessions to check. Run a generation first.")
 

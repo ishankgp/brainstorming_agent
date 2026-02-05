@@ -1,5 +1,17 @@
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
+import logging
+
+# Configure logging to file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("backend_debug.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,10 +51,16 @@ app.add_middleware(
 # REQUEST/RESPONSE MODELS
 # ============================================================================
 
+class ModelConfig(BaseModel):
+    diagnostic_model: str = "gemini-3-pro-preview"
+    generation_model: str = "gemini-3-pro-preview"
+    evaluation_model: str = "gemini-3-pro-preview"
+
 class ChallengeRequest(BaseModel):
     brief_text: str
     include_research: bool = False
     selected_research_ids: Optional[List[str]] = None
+    model_config: Optional[ModelConfig] = None
 
 class DiagnosticsRequest(BaseModel):
     brief_text: str
@@ -170,7 +188,10 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
             brief_text=request.brief_text,
             include_research=request.include_research,
             selected_research_ids=request.selected_research_ids or [],
-            research_docs=research_docs_data
+            research_docs=research_docs_data,
+            session=session, # Pass session for DB updates
+            db=db, # Pass db for DB updates
+            model_config=model_config # Pass model config
         ):
             # 1. Parse chunk
             try:
@@ -187,10 +208,10 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
                     session.diagnostic_path = data["diagnostic_path"]
                     db.commit()
                     
-                elif chunk["type"] == "challenge_result":
+                elif chunk["type"] == "challenge_generation":
+                    # PART 1: Initial Generation (Insert)
                     stmt_data = chunk["data"]
                     
-                    # Save statement
                     stmt = ChallengeStatement(
                         session_id=session.id,
                         text=stmt_data["text"],
@@ -198,40 +219,55 @@ async def stream_and_save_generator(request: ChallengeRequest, session: Challeng
                         reasoning=stmt_data["reasoning"],
                         position=stmt_data["position"],
                         generation_time_ms=stmt_data.get("generation_time_ms"),
-                        evaluation_time_ms=stmt_data.get("evaluation_time_ms")
+                        gen_model=stmt_data.get("gen_model"),
+                        gen_input_tokens=stmt_data.get("gen_input_tokens"),
+                        gen_output_tokens=stmt_data.get("gen_output_tokens")
                     )
                     db.add(stmt)
-                    db.flush()
+                    db.commit() # Commit to get ID if needed
                     
-                    # Save evaluation
-                    if "evaluation" in stmt_data and stmt_data["evaluation"]:
-                        eval_data = stmt_data["evaluation"]
-                        evaluation = ChallengeEvaluation(
-                            statement_id=stmt.id,
-                            total_score=eval_data["total_score"],
-                            weighted_score=eval_data["weighted_score"],
-                            passes_non_negotiables=eval_data["passes_non_negotiables"],
-                            failed_non_negotiables=eval_data["failed_non_negotiables"],
-                            recommendation=eval_data["recommendation"],
-                            detected_format_id=eval_data.get("detected_format_id")
-                        )
-                        db.add(evaluation)
-                        db.flush()
+                elif chunk["type"] == "challenge_evaluation":
+                    # PART 2: Evaluation (Update)
+                    stmt_data = chunk["data"]
+                    
+                    # Find existing statement
+                    stmt = db.query(ChallengeStatement).filter(
+                        ChallengeStatement.session_id == session.id,
+                        ChallengeStatement.selected_format == stmt_data["selected_format"]
+                    ).first()
+                    
+                    if stmt:
+                        stmt.evaluation_time_ms = stmt_data.get("evaluation_time_ms")
+                        stmt.eval_model = stmt_data.get("eval_model")
+                        stmt.eval_input_tokens = stmt_data.get("eval_input_tokens")
+                        stmt.eval_output_tokens = stmt_data.get("eval_output_tokens")
                         
-                        # Save scores
-                        for dim_data in eval_data["dimension_scores"]:
-                            dim_score = DimensionScore(
-                                evaluation_id=evaluation.id,
-                                dimension_id=dim_data["dimension_id"],
-                                score=dim_data["score"],
-                                notes=dim_data["notes"],
-                                has_red_flags=dim_data["has_red_flags"]
+                        # Save evaluation
+                        if "evaluation" in stmt_data and stmt_data["evaluation"]:
+                            eval_data = stmt_data["evaluation"]
+                            evaluation = ChallengeEvaluation(
+                                statement_id=stmt.id,
+                                total_score=eval_data["total_score"],
+                                weighted_score=eval_data["weighted_score"],
+                                passes_non_negotiables=eval_data["passes_non_negotiables"],
+                                failed_non_negotiables=eval_data["failed_non_negotiables"],
+                                recommendation=eval_data["recommendation"],
+                                detected_format_id=eval_data.get("detected_format_id")
                             )
-                            db.add(dim_score)
-                    
-                            db.add(dim_score)
+                            db.add(evaluation)
+                            db.flush()
                             
-                        # Save relationships
+                            # Save scores
+                            for dim_data in eval_data["dimension_scores"]:
+                                dim_score = DimensionScore(
+                                    evaluation_id=evaluation.id,
+                                    dimension_id=dim_data["dimension_id"],
+                                    score=dim_data["score"],
+                                    notes=dim_data["notes"],
+                                    has_red_flags=dim_data["has_red_flags"]
+                                )
+                                db.add(dim_score)
+                        
                         db.commit()
                         
                 elif chunk["type"] == "timing_metrics":
@@ -316,7 +352,13 @@ def get_sessions(
                     "position": stmt.position,
                     "format": stmt.selected_format,
                     "generation_time_ms": stmt.generation_time_ms,
-                    "evaluation_time_ms": stmt.evaluation_time_ms
+                    "evaluation_time_ms": stmt.evaluation_time_ms,
+                    "gen_model": stmt.gen_model,
+                    "gen_input_tokens": stmt.gen_input_tokens,
+                    "gen_output_tokens": stmt.gen_output_tokens,
+                    "eval_model": stmt.eval_model,
+                    "eval_input_tokens": stmt.eval_input_tokens,
+                    "eval_output_tokens": stmt.eval_output_tokens
                 }
                 for stmt in sorted(s.challenge_statements, key=lambda x: x.position)
             ]

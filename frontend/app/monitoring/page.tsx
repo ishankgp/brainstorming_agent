@@ -22,6 +22,12 @@ interface ChallengeTiming {
     format: string
     generation_time_ms?: number
     evaluation_time_ms?: number
+    gen_model?: string
+    gen_input_tokens?: number
+    gen_output_tokens?: number
+    eval_model?: string
+    eval_input_tokens?: number
+    eval_output_tokens?: number
 }
 
 interface TimingMetrics {
@@ -47,16 +53,22 @@ export default function MonitoringPage() {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/sessions?limit=50")
-            .then((res) => res.json())
-            .then((data) => {
-                setSessions(data)
-                setLoading(false)
-            })
-            .catch((err) => {
-                console.error("Failed to load sessions", err)
-                setLoading(false)
-            })
+        const fetchSessions = () => {
+            fetch("http://localhost:8000/api/sessions?limit=50")
+                .then((res) => res.json())
+                .then((data) => {
+                    setSessions(data)
+                    setLoading(false)
+                })
+                .catch((err) => {
+                    console.error("Failed to load sessions", err)
+                    setLoading(false)
+                })
+        }
+
+        fetchSessions()
+        const interval = setInterval(fetchSessions, 5000)
+        return () => clearInterval(interval)
     }, [])
 
     const toggleRow = (id: string) => {
@@ -199,10 +211,13 @@ export default function MonitoringPage() {
                                                             <Table>
                                                                 <TableHeader>
                                                                     <TableRow>
-                                                                        <TableHead className="w-[100px]">Format</TableHead>
-                                                                        <TableHead>Generation (ms)</TableHead>
-                                                                        <TableHead>Evaluation (ms)</TableHead>
-                                                                        <TableHead>Total (ms)</TableHead>
+                                                                        <TableHead className="w-[80px]">Format</TableHead>
+                                                                        <TableHead>Gen Model</TableHead>
+                                                                        <TableHead>Gen Tokens (In/Out)</TableHead>
+                                                                        <TableHead>Gen Time (s)</TableHead>
+                                                                        <TableHead>Eval Model</TableHead>
+                                                                        <TableHead>Eval Tokens (In/Out)</TableHead>
+                                                                        <TableHead>Eval Time (s)</TableHead>
                                                                         <TableHead className="text-right">Timeline</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
@@ -210,14 +225,23 @@ export default function MonitoringPage() {
                                                                     {session.challenges.map((challenge) => (
                                                                         <TableRow key={challenge.id}>
                                                                             <TableCell className="font-medium">{challenge.format}</TableCell>
-                                                                            <TableCell>
-                                                                                {challenge.generation_time_ms ? challenge.generation_time_ms : "-"}
+                                                                            <TableCell className="text-xs text-muted-foreground">
+                                                                                {challenge.gen_model || "-"}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-xs font-mono">
+                                                                                {challenge.gen_input_tokens || 0} / {challenge.gen_output_tokens || 0}
                                                                             </TableCell>
                                                                             <TableCell>
-                                                                                {challenge.evaluation_time_ms ? challenge.evaluation_time_ms : "-"}
+                                                                                {challenge.generation_time_ms ? (challenge.generation_time_ms / 1000).toFixed(2) + "s" : "-"}
                                                                             </TableCell>
-                                                                            <TableCell className="font-bold">
-                                                                                {(challenge.generation_time_ms || 0) + (challenge.evaluation_time_ms || 0)}
+                                                                            <TableCell className="text-xs text-muted-foreground">
+                                                                                {challenge.eval_model || "-"}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-xs font-mono">
+                                                                                {challenge.eval_input_tokens || 0} / {challenge.eval_output_tokens || 0}
+                                                                            </TableCell>
+                                                                            <TableCell>
+                                                                                {challenge.evaluation_time_ms ? (challenge.evaluation_time_ms / 1000).toFixed(2) + "s" : "-"}
                                                                             </TableCell>
                                                                             <TableCell className="text-right">
                                                                                 <div className="flex justify-end gap-1 h-2 w-full max-w-[200px] ml-auto">

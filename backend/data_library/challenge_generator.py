@@ -195,7 +195,10 @@ async def generate_challenges_stream(
     brief_text: str,
     include_research: bool,
     selected_research_ids: List[str],
-    research_docs: List[Dict[str, str]] = None
+    research_docs: List[Dict[str, str]] = None,
+    session=None, # Accepted but not used directly here (handled by wrapper)
+    db=None, # Accepted but not used directly here
+    model_config: Dict[str, str] = None
 ) -> AsyncGenerator[str, None]:
     """
     Generator that streams execution progress and results as JSON events.
@@ -235,7 +238,12 @@ async def generate_challenges_stream(
 
     # Step 1: Run Diagnostic
     start_time = time.time()
-    diagnostic_result = await run_diagnostic_tree_with_llm(brief_text)
+    
+    # Use configured model or default
+    diagnostic_model = model_config.get("diagnostic_model", GEMINI_PRO_MODEL) if model_config else GEMINI_PRO_MODEL
+    logger.info(f"Using Diagnostic Model: {diagnostic_model}")
+    
+    diagnostic_result = await run_diagnostic_tree_with_llm(brief_text, model_name=diagnostic_model)
     
     selected_formats = [f["format_id"] for f in diagnostic_result["selected_formats"]]
     
@@ -252,36 +260,53 @@ async def generate_challenges_stream(
     diagnostic_duration = time.time() - start_time
     logger.info(f"Diagnostic yielded after {diagnostic_duration:.2f}s")
     
-    # Step 2: Parallel Generation & Evaluation
-    # Create tasks for each format to run concurrently
-    tasks = [
-        process_single_challenge_task(
-            idx=idx+1,
-            format_id=fmt_id,
-            brief_text=brief_text,
-            include_research=include_research,
-            research_ids=selected_research_ids,
-            research_files=research_files,
-            reasoning=next(
+    # Step 2: Parallel Generation & Evaluation (Interleaved Streams)
+    queue = asyncio.Queue()
+    
+    async def worker(idx, fmt_id):
+        try:
+             # Find reasoning
+            reasoning = next(
                 (f["reasoning"] for f in diagnostic_result["selected_formats"] if f["format_id"] == fmt_id),
                 "Selected by diagnostic"
             )
-        )
+            
+            async for event in process_single_challenge_stream(
+                idx=idx+1,
+                format_id=fmt_id,
+                brief_text=brief_text,
+                include_research=include_research,
+                research_ids=selected_research_ids,
+                research_files=research_files,
+                reasoning=reasoning
+            ):
+                await queue.put(json.dumps(event))
+        except Exception as e:
+            logger.error(f"Worker {idx} failed: {e}")
+            # Yield error so user sees it
+            await queue.put(json.dumps({
+                "type": "error",
+                "message": f"Worker {idx} error: {str(e)}"
+            }))
+        finally:
+            await queue.put(None) # Signal completion for this worker
+
+    # Start workers
+    worker_tasks = [
+        asyncio.create_task(worker(idx, fmt_id))
         for idx, fmt_id in enumerate(selected_formats)
     ]
     
-    # Step 3: Yield results as they complete
-    for future in asyncio.as_completed(tasks):
-        try:
-            result = await future
-            yield json.dumps({
-                "type": "challenge_result",
-                "data": result
-            })
-        except Exception as e:
-            logger.error(f"Task failed: {e}")
-            # Yield error placeholder if needed, or just log
-            # For now we'll rely on the task to return a fallback object on failure
+    # Consumer loop: Wait for all workers to send None
+    completed_workers = 0
+    total_workers = len(worker_tasks)
+    
+    while completed_workers < total_workers:
+        item = await queue.get()
+        if item is None:
+            completed_workers += 1
+        else:
+            yield item
 
     # Final Timing Metrics
     total_duration = time.time() - start_time
@@ -295,7 +320,7 @@ async def generate_challenges_stream(
         }
     })
 
-async def process_single_challenge_task(
+async def process_single_challenge_stream(
     idx: int,
     format_id: str,
     brief_text: str,
@@ -303,14 +328,17 @@ async def process_single_challenge_task(
     research_ids: List[str],
     reasoning: str,
     research_files: List[Any] = None
-) -> Dict[str, Any]:
+) -> AsyncGenerator[Dict[str, Any], None]:
     """
-    Generates AND evaluates a single challenge statement.
-    This runs in parallel for each format.
+    Generates AND evaluates a single challenge statement, yielding results as they happen.
+    Yields:
+    1. {"type": "challenge_generation", "data": {...}}
+    2. {"type": "challenge_evaluation", "data": {...}}
     """
     gen_start = time.time()
     try:
         # A. Generate Statement
+        print(f"DEBUG: Starting generation for {format_id}")
         statement_data = await generate_single_statement_with_ai(
             brief_text=brief_text,
             format_id=format_id,
@@ -319,7 +347,27 @@ async def process_single_challenge_task(
         )
         gen_duration = (time.time() - gen_start) * 1000
         
+        # Yield Partial Result (Generation Only)
+        gen_event = {
+            "type": "challenge_generation",
+            "data": {
+                "id": idx,
+                "text": statement_data["text"],
+                "selected_format": format_id,
+                "reasoning": reasoning,
+                "position": idx,
+                "generation_time_ms": int(gen_duration),
+                "evaluation_time_ms": None, # Pending
+                "gen_model": statement_data.get("model_name"),
+                "gen_input_tokens": statement_data.get("input_tokens", 0),
+                "gen_output_tokens": statement_data.get("output_tokens", 0),
+                "status": "evaluating" # Frontend signal
+            }
+        }
+        yield gen_event
+        
         # B. Evaluate Statement
+        print(f"DEBUG: Starting evaluation for {format_id}")
         eval_start = time.time()
         evaluation = await evaluate_statement_with_ai(
             statement_text=statement_data["text"],
@@ -328,39 +376,42 @@ async def process_single_challenge_task(
         )
         eval_duration = (time.time() - eval_start) * 1000
         
-        # Combine
-        return {
-            "id": idx,
-            "text": statement_data["text"],
-            "selected_format": format_id,
-            "reasoning": reasoning,
-            "evaluation": evaluation,
-            "position": idx,
-            "generation_time_ms": int(gen_duration),
-            "evaluation_time_ms": int(eval_duration)
+        # Yield Final Result (With Evaluation)
+        eval_event = {
+            "type": "challenge_evaluation",
+            "data": {
+                "id": idx,
+                "text": statement_data["text"], # Repeat for safety/idempotency
+                "selected_format": format_id,
+                "evaluation": evaluation,
+                "evaluation_time_ms": int(eval_duration),
+                "eval_model": evaluation.get("model_name"),
+                "eval_input_tokens": evaluation.get("input_tokens", 0),
+                "eval_output_tokens": evaluation.get("output_tokens", 0),
+                "status": "complete"
+            }
         }
+        yield eval_event
         
     except Exception as e:
         logger.error(f"Error processing format {format_id}: {e}")
-        # Return fallback
-        return {
-            "id": idx,
-            "text": f"Error generating content for {format_id}. Please try again.",
-            "selected_format": format_id,
-            "reasoning": reasoning,
-            "evaluation": create_default_evaluation(),
-            "position": idx,
-            "generation_time_ms": int((time.time() - gen_start) * 1000),
-            "evaluation_time_ms": 0
+        # Return fallback error event
+        yield {
+            "type": "challenge_error",
+            "data": {
+                "id": idx,
+                "selected_format": format_id,
+                "error": str(e)
+            }
         }
 
 # ============================================================================
 # LLM-BASED DIAGNOSTIC DECISION TREE (Gemini 3 Pro)
 # ============================================================================
 
-async def run_diagnostic_tree_with_llm(brief_text: str) -> Dict[str, Any]:
+async def run_diagnostic_tree_with_llm(brief_text: str, model_name: str = GEMINI_PRO_MODEL) -> Dict[str, Any]:
     """
-    Use Gemini 3 Pro to analyze brief and select formats intelligently.
+    Use Gemini to analyze brief and select formats intelligently.
     """
     logger.info("Running LLM-based diagnostic analysis...")
     
@@ -424,13 +475,16 @@ Return structured JSON with:
 Be specific and cite evidence from the brief in your reasoning."""
 
     try:
-        response = get_client().models.generate_content(
-            model=GEMINI_PRO_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=get_diagnostic_schema(),
-                temperature=0.3
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: get_client().models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=get_diagnostic_schema(),
+                    temperature=0.3
+                )
             )
         )
         
@@ -510,12 +564,15 @@ Return JSON:
             # Append file objects/parts to the content list (Long Context)
             contents.extend(research_files)
 
-        response = get_client().models.generate_content(
-            model=GEMINI_PRO_MODEL,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-                response_mime_type="application/json"
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: get_client().models.generate_content(
+                model=GEMINI_PRO_MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    response_mime_type="application/json"
+                )
             )
         )
         
@@ -525,16 +582,29 @@ Return JSON:
             if response_text.startswith("json"):
                 response_text = response_text[4:]
         
+        
         data = json.loads(response_text)
+        
+        # Capture usage
+        usage = response.usage_metadata
+        input_tokens = usage.prompt_token_count if usage else 0
+        output_tokens = usage.candidates_token_count if usage else 0
+        
         return {
             "text": data.get("text", "Error generating text"),
-            "format_id": format_id
+            "format_id": format_id,
+            "model_name": GEMINI_PRO_MODEL,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
         }
     except Exception as e:
         logger.error(f"Single statement gen failed for {format_id}: {e}")
         return {
             "text": f"How can we apply {format_def['name']} to this challenge?",
-            "format_id": format_id
+            "format_id": format_id,
+            "model_name": "error",
+            "input_tokens": 0,
+            "output_tokens": 0
         }
 
 # ============================================================================
@@ -596,12 +666,15 @@ Return ONLY valid JSON (no markdown):
 }}"""
     
     try:
-        response = get_client().models.generate_content(
-            model=GEMINI_PRO_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.3,
-                response_mime_type="application/json"
+        response = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: get_client().models.generate_content(
+                model=GEMINI_PRO_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    response_mime_type="application/json"
+                )
             )
         )
         
@@ -619,6 +692,12 @@ Return ONLY valid JSON (no markdown):
         weighted_score = calculate_weighted_score(scores)
         failed_non_negotiables = get_failed_non_negotiables(scores)
         
+        
+        # Capture usage
+        usage = response.usage_metadata
+        input_tokens = usage.prompt_token_count if usage else 0
+        output_tokens = usage.candidates_token_count if usage else 0
+
         return {
             "dimension_scores": scores,
             "total_score": total_score,
@@ -627,7 +706,10 @@ Return ONLY valid JSON (no markdown):
             "failed_non_negotiables": failed_non_negotiables,
             "recommendation": determine_recommendation(scores, failed_non_negotiables),
             "research_references": [],
-            "detected_format_id": eval_data.get("detected_format_id", "F01")
+            "detected_format_id": eval_data.get("detected_format_id", "F01"),
+            "model_name": GEMINI_PRO_MODEL,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
         }
     except Exception as e:
         logger.error(f"AI evaluation failed: {e}")

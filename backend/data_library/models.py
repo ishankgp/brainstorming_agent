@@ -121,6 +121,15 @@ class ChallengeStatement(Base):
     # Timing Metrics
     generation_time_ms = Column(Integer, nullable=True)
     evaluation_time_ms = Column(Integer, nullable=True)
+
+    # Usage Metrics
+    gen_model = Column(String, nullable=True)
+    gen_input_tokens = Column(Integer, nullable=True)
+    gen_output_tokens = Column(Integer, nullable=True)
+    
+    eval_model = Column(String, nullable=True)
+    eval_input_tokens = Column(Integer, nullable=True)
+    eval_output_tokens = Column(Integer, nullable=True)
     
     # Display order
     position = Column(Integer, nullable=False)  # 1-5
