@@ -94,7 +94,7 @@ export function ResultsSection({
   )
 
   return (
-    <div className="w-full space-y-14">
+    <div className="w-full space-y-8">
       <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-3">
           <h2 className="text-4xl md:text-5xl font-light text-foreground tracking-tight">
@@ -266,7 +266,7 @@ export function ResultsSection({
       </div>
 
       {/* Statement Cards */}
-      <div className="space-y-7 mt-12">
+      <div className="space-y-4 mt-6">
         {localResult.challenge_statements.map((statement, index) => (
           <StatementCard
             key={statement.id}

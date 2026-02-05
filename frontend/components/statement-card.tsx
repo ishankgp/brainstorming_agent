@@ -123,9 +123,9 @@ export function StatementCard({
 
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-md border-border/40 bg-card/50">
-      <CardContent className="p-10">
-        <div className="flex items-start gap-6">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-primary">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
             {index + 1}
           </div>
 
@@ -133,7 +133,7 @@ export function StatementCard({
 
             {/* Display Mode vs Edit Mode */}
             {!isEditing ? (
-              <p className="text-lg leading-relaxed text-foreground font-light">
+              <p className="text-base leading-relaxed text-foreground font-light">
                 {statement.text}
               </p>
             ) : (
@@ -228,8 +228,8 @@ export function StatementCard({
             {/* Metadata & Actions (Hidden when editing to reduce clutter) */}
             {!isEditing && (
               <>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant="secondary" className="gap-2 font-light">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="gap-1.5 font-light text-xs px-2 py-0.5">
                     <Tag className="h-3 w-3" />
                     {statement.selected_format}
                   </Badge>
