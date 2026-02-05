@@ -253,7 +253,10 @@ async def generate_challenges_stream(
         "data": {
             "diagnostic_summary": diagnostic_result["diagnostic_summary"],
             "diagnostic_path": diagnostic_result["diagnostic_path"],
-            "selected_formats": selected_formats
+            "selected_formats": selected_formats,
+            "diagnostic_model": diagnostic_model,
+            "diagnostic_input_tokens": diagnostic_result.get("input_tokens", 0),
+            "diagnostic_output_tokens": diagnostic_result.get("output_tokens", 0)
         }
     })
     
@@ -323,6 +326,9 @@ async def generate_challenges_stream(
             "total_latency_ms": int((total_duration + retrieval_duration) * 1000),
             "diagnostic_ms": int(diagnostic_duration * 1000),
             "retrieval_ms": int(retrieval_duration * 1000),
+            "diagnostic_model": diagnostic_model,
+            "diagnostic_input_tokens": diagnostic_result.get("input_tokens", 0),
+            "diagnostic_output_tokens": diagnostic_result.get("output_tokens", 0)
         }
     })
 
@@ -500,6 +506,12 @@ Be specific and cite evidence from the brief in your reasoning."""
         
         result = json.loads(response.text)
         
+        # Capture usage
+        usage = response.usage_metadata
+        result["input_tokens"] = usage.prompt_token_count if usage else 0
+        result["output_tokens"] = usage.candidates_token_count if usage else 0
+        result["model_name"] = model_name
+        
         # Clean up format_ids
         for fmt in result["selected_formats"]:
             format_id = fmt["format_id"].split(" ")[0].split("-")[0].strip()
@@ -517,7 +529,17 @@ Be specific and cite evidence from the brief in your reasoning."""
                 logger.warning(f"Invalid format ID received: {fmt['format_id']}")
                 fmt["format_id"] = "F01" # Default fallback
         
-        logger.info(f"Diagnostic complete.")
+        # Capture usage
+        usage = response.usage_metadata
+        input_tokens = usage.prompt_token_count if usage else 0
+        output_tokens = usage.candidates_token_count if usage else 0
+        
+        logger.info(f"Diagnostic complete. Tokens: {input_tokens} in / {output_tokens} out")
+        
+        result["input_tokens"] = input_tokens
+        result["output_tokens"] = output_tokens
+        result["model_name"] = model_name
+        
         return result
         
     except Exception as e:
@@ -526,7 +548,10 @@ Be specific and cite evidence from the brief in your reasoning."""
         return {
             "diagnostic_path": [],
             "selected_formats": [{"format_id": "F01", "reasoning": "Fallback", "priority": 1}] * 5,
-            "diagnostic_summary": "Diagnostic analysis unavailable."
+            "diagnostic_summary": "Diagnostic analysis unavailable.",
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "model_name": "error"
         }
 
 
