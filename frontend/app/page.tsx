@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic"
 import { useState, useEffect, useRef } from "react"
 import { AlertCircle } from "lucide-react"
-import { Header } from "@/components/header"
 import { useAppStore } from "@/lib/store"
+
 import { BriefInput } from "@/components/brief-input"
 import { ResultsSection } from "@/components/results-section"
 import { LoadingSkeleton } from "@/components/loading-skeleton"
@@ -38,7 +38,9 @@ function BrainstormAgentContent() {
     selectedResearch, setSelectedResearch,
     lastIncludeResearch, setLastIncludeResearch,
     toggleResearch,
-    reset: resetStore
+    reset: resetStore,
+    isLibraryOpen,
+    setIsLibraryOpen
   } = useAppStore()
 
   // Alias for backward compatibility with existing code
@@ -46,8 +48,8 @@ function BrainstormAgentContent() {
   const setAppState = setAppStatus
 
   // Local State (non-persistent UI state)
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false)
   const [formats, setFormats] = useState<ChallengeFormat[]>(DEFAULT_FORMATS)
+
   const [diagnosticRules, setDiagnosticRules] =
     useState<DiagnosticRule[]>(DEFAULT_DIAGNOSTIC_RULES)
 
@@ -326,7 +328,6 @@ function BrainstormAgentContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onOpenLibrary={() => setIsLibraryOpen(true)} />
 
       <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
 

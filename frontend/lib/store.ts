@@ -14,6 +14,7 @@ interface AppState {
     lastIncludeResearch: boolean
     logs: string[]
     currentStep: string
+    isLibraryOpen: boolean
 
     // Actions
     setBriefText: (text: string) => void
@@ -23,6 +24,7 @@ interface AppState {
     setLogs: (logs: string[]) => void
     addLog: (log: string) => void
     setCurrentStep: (step: string) => void
+    setIsLibraryOpen: (isOpen: boolean) => void
 
     setSelectedResearch: (ids: string[]) => void
     setLastIncludeResearch: (include: boolean) => void
@@ -41,6 +43,7 @@ export const useAppStore = create<AppState>()(
             lastIncludeResearch: false,
             logs: [],
             currentStep: "Idle",
+            isLibraryOpen: false,
 
             setBriefText: (text) => set({ briefText: text }),
             setAppStatus: (status) => set({ appStatus: status }),
@@ -49,6 +52,7 @@ export const useAppStore = create<AppState>()(
             setLogs: (logs) => set({ logs }),
             addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
             setCurrentStep: (step) => set({ currentStep: step }),
+            setIsLibraryOpen: (isOpen) => set({ isLibraryOpen: isOpen }),
 
             setSelectedResearch: (ids) => set({ selectedResearch: ids }),
             setLastIncludeResearch: (include) => set({ lastIncludeResearch: include }),
@@ -67,7 +71,8 @@ export const useAppStore = create<AppState>()(
                 selectedResearch: [],
                 lastIncludeResearch: false,
                 logs: [],
-                currentStep: "Idle"
+                currentStep: "Idle",
+                isLibraryOpen: false
             })
         }),
         {
@@ -76,3 +81,4 @@ export const useAppStore = create<AppState>()(
         }
     )
 )
+

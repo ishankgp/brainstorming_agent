@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Fragment } from "react"
 import Link from "next/link"
-import { ArrowLeft, Clock, Server, Play, ChevronDown, ChevronRight, Activity } from "lucide-react"
+import { ArrowLeft, Clock, Server, Play, ChevronDown, ChevronRight, Activity, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -86,36 +86,23 @@ export default function MonitoringPage() {
         return acc + total
     }, 0) / (sessions.filter(s => s.timing_metrics).length || 1)
 
+    const averageDiagnostic = sessions.reduce((acc, s) => {
+        const diag = s.timing_metrics?.diagnostic_ms || 0
+        return acc + diag
+    }, 0) / (sessions.filter(s => s.timing_metrics).length || 1)
+
     return (
         <div className="min-h-screen bg-muted/10">
-            {/* Header */}
-            <header className="border-b bg-background/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-8">
-                    <div className="flex items-center gap-4">
-                        <Link href="/">
-                            <Button variant="ghost" size="icon" className="h-9 w-9">
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-primary" />
-                            <h1 className="text-xl font-semibold tracking-tight">System Performance Monitor</h1>
-                        </div>
-                    </div>
-
-                    <Link href="/monitoring/models">
-                        <Button variant="outline" size="sm" className="gap-2">
-                            <Server className="h-4 w-4" />
-                            Model Config
-                        </Button>
-                    </Link>
-                </div>
-            </header>
-
             <main className="mx-auto max-w-7xl p-8 space-y-8">
 
+                {/* Page Header & Actions */}
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-semibold tracking-tight">System Performance Monitor</h1>
+                </div>
+
+
                 {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Runs</CardTitle>
@@ -134,6 +121,16 @@ export default function MonitoringPage() {
                         <CardContent>
                             <div className="text-2xl font-bold">{(averageLatency / 1000).toFixed(2)}s</div>
                             <p className="text-xs text-muted-foreground">Per generation run</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Avg Diag Time</CardTitle>
+                            <Brain className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{(averageDiagnostic / 1000).toFixed(2)}s</div>
+                            <p className="text-xs text-muted-foreground">Per session</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -167,6 +164,7 @@ export default function MonitoringPage() {
                                         <TableHead>Total Time</TableHead>
                                         <TableHead>Diagnostic</TableHead>
                                         <TableHead>Retrieval</TableHead>
+                                        <TableHead>Timeline</TableHead>
                                         <TableHead>Brief</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -207,6 +205,30 @@ export default function MonitoringPage() {
                                                     {session.timing_metrics
                                                         ? (session.timing_metrics.retrieval_ms / 1000).toFixed(2) + "s"
                                                         : "-"}
+                                                </TableCell>
+                                                <TableCell className="w-[180px]">
+                                                    {session.timing_metrics ? (
+                                                        <div className="flex h-2 w-full rounded-full bg-secondary overflow-hidden" title="Timeline: Amber=Diagnostic, Gray=Retrieval, Blue=Gen/Eval">
+                                                            {/* Diagnostic - Amber */}
+                                                            <div
+                                                                className="bg-amber-400"
+                                                                style={{ width: `${(session.timing_metrics.diagnostic_ms / (session.timing_metrics.total_latency_ms || 1)) * 100}%` }}
+                                                                title={`Diagnostic: ${session.timing_metrics.diagnostic_ms}ms`}
+                                                            />
+                                                            {/* Retrieval - Zinc */}
+                                                            <div
+                                                                className="bg-zinc-400"
+                                                                style={{ width: `${(session.timing_metrics.retrieval_ms / (session.timing_metrics.total_latency_ms || 1)) * 100}%` }}
+                                                                title={`Retrieval: ${session.timing_metrics.retrieval_ms}ms`}
+                                                            />
+                                                            {/* Gen/Eval - Primary */}
+                                                            <div
+                                                                className="bg-primary/80"
+                                                                style={{ width: `${100 - ((session.timing_metrics.diagnostic_ms + session.timing_metrics.retrieval_ms) / (session.timing_metrics.total_latency_ms || 1)) * 100}%` }}
+                                                                title={`Processing: ${(session.timing_metrics.total_latency_ms - session.timing_metrics.diagnostic_ms - session.timing_metrics.retrieval_ms)}ms`}
+                                                            />
+                                                        </div>
+                                                    ) : "-"}
                                                 </TableCell>
                                                 <TableCell className="max-w-[300px] truncate text-muted-foreground text-xs">
                                                     {session.brief_preview}
