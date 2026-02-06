@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/empty-state"
 import { FormatLibrary } from "@/components/format-library"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { AgentStatusCard } from "@/components/agent-status-card"
 import {
   DEFAULT_FORMATS,
   DEFAULT_DIAGNOSTIC_RULES,
@@ -40,7 +41,10 @@ function BrainstormAgentContent() {
     toggleResearch,
     reset: resetStore,
     isLibraryOpen,
-    setIsLibraryOpen
+    setIsLibraryOpen,
+    logs,
+    addLog,
+    setLogs
   } = useAppStore()
 
   // Alias for backward compatibility with existing code
@@ -126,15 +130,19 @@ function BrainstormAgentContent() {
     setSelectedResearch(newSelected)
   }
 
+  const [isGenerating, setIsGenerating] = useState(false)
   // Use a ref for the timeout to ensure it persists and handles weird closure issues
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleGenerate = async (includeResearch: boolean) => {
     setLastIncludeResearch(includeResearch)
     setAppState("loading")
+    setIsGenerating(true)
     setError(null)
     setResult(null) // Clear previous result
-    setLastLogMessage("Initializing AI process...")
+    setLogs([]) // Clear previous logs
+    addLog("Initializing Agentic Workflow...")
+    addLog("Analyzing brief constraints and requirements...")
     console.log("🚀 Starting generation request...")
 
     try {
@@ -228,7 +236,8 @@ function BrainstormAgentContent() {
 
               if (event.type === 'diagnostic') {
                 // Diagnostic complete - show streaming UI immediately
-                setLastLogMessage("Diagnostic complete. Generating challenges...")
+                addLog("Diagnostic complete. Strategic approach selected.")
+                addLog("Identified 5 optimal Challenge Formats.")
                 currentResult = {
                   ...currentResult,
                   diagnostic_summary: event.data.diagnostic_summary,
@@ -240,7 +249,7 @@ function BrainstormAgentContent() {
               else if (event.type === 'challenge_generation') {
                 // New statement arrived (without evaluation yet)
                 const newStatement = event.data as ChallengeStatement
-                setLastLogMessage(`Generated Format ${newStatement.selected_format}. Evaluating...`)
+                addLog(`Drafting Challenge using format: ${newStatement.selected_format}...`)
 
                 // Add to list and sort
                 // Check if it already exists (redundancy check)
@@ -259,7 +268,7 @@ function BrainstormAgentContent() {
               else if (event.type === 'challenge_evaluation') {
                 // Evaluation arrived - Update existing statement
                 const evalData = event.data as ChallengeStatement
-                setLastLogMessage(`Evaluated Format ${evalData.selected_format}.`)
+                addLog(`Evaluating Challenge ${evalData.selected_format} against 8 dimensions...`)
 
                 const updatedStatements = currentResult.challenge_statements.map(s => {
                   if (s.id === evalData.id) {
@@ -278,11 +287,16 @@ function BrainstormAgentContent() {
                 // Deprecated but logic kept for compatibility just in case
                 // ...
               }
+              else if (event.type === 'timing_metrics') {
+                addLog("Finalizing metrics and cleaning up...")
+              }
               else if (event.type === 'error') {
                 throw new Error(event.message)
               }
               else if (event.type === 'complete') {
                 console.log("✅ Stream complete")
+                addLog("Mission Complete. All challenges generated and evaluated.")
+                setIsGenerating(false)
               }
             } catch (e) {
               console.error("Error parsing stream chunk", e)
@@ -299,6 +313,7 @@ function BrainstormAgentContent() {
       }
 
       console.error("🚨 Generation failed:", err)
+      setIsGenerating(false)
 
       let errorMessage = "An unexpected error occurred"
       if (err instanceof Error) {
@@ -308,7 +323,7 @@ function BrainstormAgentContent() {
           errorMessage = err.message
         }
       }
-
+      addLog(`Error: ${errorMessage}`)
       setError(errorMessage)
       setAppState("error")
     }
@@ -332,12 +347,12 @@ function BrainstormAgentContent() {
       <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
 
         {/* LIVE STATUS BANNER */}
-        {(appState === "loading" || (appState === "success" && (result?.challenge_statements?.length || 0) < 5)) && lastLogMessage && (
-          <div className="mb-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <p className="font-mono text-sm">{lastLogMessage}</p>
-          </div>
-        )}
+        {/* LIVE STATUS BANNER - REPLACED BY AGENT STATUS CARD */}
+        <AgentStatusCard
+          logs={logs}
+          status={appState === 'error' ? 'error' : (isGenerating ? 'loading' : appState)}
+          className="mb-8"
+        />
 
         {/* Input Section - Always visible when not in success state */}
         {appState !== "success" && (
